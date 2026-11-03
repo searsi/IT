@@ -21,7 +21,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, setDoc, getDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, setDoc, getDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAtY-9yd2T4YRupZfya7VdLYvyQGssF_QI",
@@ -64,26 +64,23 @@
                 gain.connect(audioCtx.destination);
 
                 if (type === 'success') {
-                    // صوت نجاح (نغمة تصاعدية لطيفة)
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
                     gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.25);
                 } else if (type === 'completed') {
-                    // صوت إتمام الطلب (نغمتين متتاليتين مبهجتين)
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
-                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
                     gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.35);
                 } else {
-                    // صوت خطأ أو تنبيه
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(220, audioCtx.currentTime);
                     gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
@@ -632,21 +629,33 @@
             if(o.status === 'new') statusBadge = '<span class="bg-sky-50 text-sky-800 border border-sky-200 text-xs px-3 py-1 rounded-full font-bold">جديد 🆕</span>';
             else if(o.status === 'in_progress') statusBadge = '<span class="bg-amber-50 text-amber-800 border border-amber-200 text-xs px-3 py-1 rounded-full font-bold">قيد التنفيذ ⏳</span>';
             else if(o.status === 'not_found') statusBadge = '<span class="bg-orange-50 text-orange-800 border border-orange-200 text-xs px-3 py-1 rounded-full font-bold">مؤجل ⚠️</span>';
+            else if(o.status === 'cancelled') statusBadge = '<span class="bg-rose-50 text-rose-800 border border-rose-200 text-xs px-3 py-1 rounded-full font-bold">ملغي ❌</span>';
             else if(o.status === 'completed') statusBadge = '<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs px-3 py-1 rounded-full font-bold">مكتمل ومؤرشف ✅</span>';
 
             let paymentBadge = o.paymentStatus === 'received' 
                 ? '<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] px-3 py-1 rounded-md font-bold">مستلم ✅</span>'
                 : '<span class="bg-amber-50 text-amber-800 border border-amber-200 text-[11px] px-3 py-1 rounded-md font-bold">آجل ⏳</span>';
 
+            // زر الحذف النهائي الصغير بدون كتابة (أيقونة فقط) وفي أعلى التكت
+            let deleteBtnHTML = isManager ? `
+                <button onclick="openDeleteConfirmModal('${o.id}')" class="w-9 h-9 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center transition border border-rose-200 shadow-2xs" title="حذف نهائي">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+            ` : '';
+
             return `
                 <div class="bg-white rounded-3xl border ${isMaintenance ? 'border-amber-200 shadow-amber-500/5' : 'border-slate-200'} shadow-sm hover:shadow-md transition-all p-6 space-y-4 relative">
+                    <!-- رأس التكت: يحتوي على الشعار والحالة وزر الحذف الصغير في الأعلى -->
                     <div class="flex justify-between items-start border-b border-slate-100 pb-3.5">
                         <div>
                             <div class="mb-2">${categoryBadge}</div>
                             <span class="font-extrabold text-slate-900 text-base">${o.company}</span>
                             <span class="block text-xs font-bold ${isMaintenance ? 'text-amber-700' : 'text-blue-700'} mt-0.5">${o.plan || ''}</span>
                         </div>
-                        ${statusBadge}
+                        <div class="flex items-center gap-2">
+                            ${statusBadge}
+                            ${deleteBtnHTML}
+                        </div>
                     </div>
 
                     <div class="text-xs space-y-3 text-slate-600">
@@ -686,7 +695,7 @@
 
                     ${!isManager ? `
                         <div class="pt-2 space-y-2.5">
-                            <div class="grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <button onclick="updateOrderStatus('${o.id}', 'in_progress', '${o.assignedEmp || ''}')" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-2xl text-xs transition shadow-sm active:scale-95 text-center">
                                     استلام ⏳
                                 </button>
@@ -695,6 +704,9 @@
                                 </button>
                                 <button onclick="updateOrderStatus('${o.id}', 'completed', '${o.assignedEmp || ''}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-sm active:scale-95 text-center">
                                     مكتمل ✅
+                                </button>
+                                <button onclick="updateOrderStatus('${o.id}', 'cancelled', '${o.assignedEmp || ''}')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-sm active:scale-95 text-center">
+                                    إلغاء ❌
                                 </button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
@@ -712,6 +724,30 @@
                 </div>
             `;
         }
+
+        // إشعار النافذة المنبثقة لتأكيد الحذف
+        window.openDeleteConfirmModal = function(orderId) {
+            document.getElementById('confirmDeleteTargetId').value = orderId;
+            document.getElementById('deleteConfirmModalContainer').classList.remove('hidden');
+        };
+
+        window.closeDeleteConfirmModal = function() {
+            document.getElementById('deleteConfirmModalContainer').classList.add('hidden');
+        };
+
+        window.confirmDeleteOrder = async function() {
+            const orderId = document.getElementById('confirmDeleteTargetId').value;
+            if (!orderId) return;
+
+            try {
+                await deleteDoc(doc(db, "orders", orderId));
+                showToast("تم حذف الأوردر نهائياً من النظام 🗑️", "error");
+                closeDeleteConfirmModal();
+                loadOrders(localStorage.getItem('userRole') || 'employee');
+            } catch (error) {
+                showToast("حدث خطأ أثناء محاولة الحذف", "error");
+            }
+        };
 
         window.openTicketDetailsModal = async function(orderId) {
             const order = (window.allOrders || []).find(o => o.id === orderId);
@@ -879,7 +915,7 @@
                 
                 const updateData = { status: newStatus };
                 
-                if (newStatus === 'in_progress' || newStatus === 'completed') {
+                if (newStatus === 'in_progress' || newStatus === 'completed' || newStatus === 'cancelled') {
                     if (currentAssignedEmp && currentAssignedEmp !== newEmpName && currentAssignedEmp !== 'undefined') {
                         const docSnap = await getDoc(orderRef);
                         if (docSnap.exists()) {
@@ -895,9 +931,10 @@
 
                 await updateDoc(orderRef, updateData);
                 
-                // تشغيل صوت مخصص إذا تم إكمال الطلب وأرشفته
                 if (newStatus === 'completed') {
                     showToast("تم إكمال الطلب ونقله لأرشيف الطلبات المكتملة ✅", "completed");
+                } else if (newStatus === 'cancelled') {
+                    showToast("تم إلغاء الأوردر بنجاح ❌", "error");
                 } else {
                     showToast("تم تحديث حالة الطلب بنجاح", "success");
                 }
@@ -1024,6 +1061,7 @@
                         <option value="new">جديد 🆕</option>
                         <option value="in_progress">قيد التنفيذ ⏳</option>
                         <option value="not_found">مؤجل ⚠️</option>
+                        <option value="cancelled">ملغي ❌</option>
                     </select>
                 </div>
             </div>
@@ -1128,6 +1166,7 @@
                             <option value="new">جديد 🆕</option>
                             <option value="in_progress">قيد التنفيذ ⏳</option>
                             <option value="not_found">مؤجل ⚠️</option>
+                            <option value="cancelled">ملغي ❌</option>
                         </select>
                     </div>
                 </div>
@@ -1155,7 +1194,7 @@
                 <div id="manager-completed-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
             </div>
 
-            <!-- تبويب طلب نصب جديد (محدث بخيارات الأجهزة من 1 إلى 10) -->
+            <!-- تبويب طلب نصب جديد -->
             <div id="tab-new-install" class="hidden space-y-6 max-w-3xl mx-auto">
                 <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 md:p-8 space-y-6">
                     <div class="border-b border-slate-100 pb-4">
@@ -1221,7 +1260,6 @@
                             </div>
                         </div>
 
-                        <!-- خيارات الأجهزة من 1 إلى 10 -->
                         <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">راوتر:</label>
@@ -1449,6 +1487,27 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- modal تأكيد الحذف النهائي (نافذة منبثقة) -->
+    <div id="deleteConfirmModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-5 shadow-2xl border border-slate-200 text-center">
+            <div class="w-14 h-14 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-200">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            
+            <input type="hidden" id="confirmDeleteTargetId">
+
+            <div class="space-y-1.5">
+                <h4 class="font-extrabold text-slate-900 text-sm">تأكيد الحذف النهائي</h4>
+                <p class="text-xs text-slate-500 font-semibold leading-relaxed">هل أنت متأكد تماماً من رغبتك في حذف هذا الأوردر نهائياً من النظام؟ لا يمكن التراجع عن هذه الخطوة.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button onclick="closeDeleteConfirmModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 rounded-2xl text-xs font-bold transition">إلغاء</button>
+                <button onclick="confirmDeleteOrder()" class="bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-2xl text-xs font-bold transition shadow-md shadow-rose-600/20">تأكيد الحذف 🗑️</button>
+            </div>
+        </div>
     </div>
 
     <!-- modal التفاصيل السجل -->
