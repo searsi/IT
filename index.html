@@ -53,22 +53,33 @@
             }
         };
 
+        // إصلاح دالة التنبيه لضمان الظهور والاختفاء التام دون بقاء عوالق أسفل الصفحة
+        let toastTimer = null;
         window.showToast = function(message, type = 'success') {
             const toast = document.getElementById('customToast');
             const toastMsg = document.getElementById('toastMessage');
             const toastIcon = document.getElementById('toastIcon');
 
+            if (!toast) return;
+
+            // إلغاء أي مؤقت سابق لكي تظهر الرسالة الجديدة بشكل نظيف
+            if (toastTimer) clearTimeout(toastTimer);
+
             toastMsg.innerText = message;
             if(type === 'success') {
-                toast.className = "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-xs transition-all duration-300 translate-y-0 opacity-100 border border-slate-700";
                 toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
             } else {
-                toast.className = "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-xs transition-all duration-300 translate-y-0 opacity-100 border border-slate-700";
                 toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-lg";
             }
 
-            setTimeout(() => {
-                toast.classList.add('translate-y-12', 'opacity-0');
+            // إظهار التنبيه (إزالة الإخفاء وجعله قابل للتفاعل مؤقتاً)
+            toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+
+            // إخفاء التنبيه تلقائياً بعد 3.2 ثانية وإبعاده نهائياً عن الشاشة
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
             }, 3200);
         };
 
@@ -250,8 +261,20 @@
             }
         });
 
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('managerSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if(sidebar.classList.contains('translate-x-full')) {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        };
+
         window.switchManagerTab = function(tabName) {
-            ['all-orders', 'new-install', 'new-maintenance', 'settings'].forEach(t => {
+            ['all-orders', 'completed-orders', 'new-install', 'new-maintenance', 'settings'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
                 const nav = document.getElementById(`nav-${t}`);
                 if(el) el.classList.add('hidden');
@@ -262,9 +285,20 @@
             const activeNav = document.getElementById(`nav-${tabName}`);
             if(activeTab) activeTab.classList.remove('hidden');
             if(activeNav) {
-                activeNav.className = tabName === 'new-maintenance' 
-                    ? "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-amber-500 text-white shadow-md shadow-amber-500/20 transition"
-                    : "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-blue-700 text-white shadow-md shadow-blue-700/20 transition";
+                if(tabName === 'new-maintenance') {
+                    activeNav.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-amber-500 text-white shadow-md shadow-amber-500/20 transition";
+                } else if(tabName === 'completed-orders') {
+                    activeNav.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-emerald-600 text-white shadow-md shadow-emerald-600/20 transition";
+                } else {
+                    activeNav.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-blue-700 text-white shadow-md shadow-blue-700/20 transition";
+                }
+            }
+
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('managerSidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar) sidebar.classList.add('translate-x-full');
+                if (overlay) overlay.classList.add('hidden');
             }
         };
 
@@ -440,6 +474,10 @@
                 });
 
                 renderOrders(userType);
+                if (userType === 'manager') {
+                    renderCompletedOrders();
+                }
+                showToast("تم تحديث وجلب البيانات الحية بنجاح 🔄", "success");
             } catch (error) {
                 console.error("Error loading orders:", error);
             }
@@ -460,6 +498,9 @@
             container.innerHTML = '';
 
             const filtered = (window.allOrders || []).filter(o => {
+                if(o.status === 'completed') {
+                    return false;
+                }
                 const cat = o.orderCategory || 'installation';
                 const matchCat = categoryFilter === 'ALL' || cat === categoryFilter;
                 const matchStat = statusFilter === 'ALL' || o.status === statusFilter;
@@ -467,12 +508,44 @@
             });
 
             if(filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-400 shadow-xs"><i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i><p class="text-xs font-bold">لا توجد سجلات أو أوامر مطابقة للفلتر المحدد</p></div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-400 shadow-xs"><i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i><p class="text-xs font-bold">لا توجد طلبات نشطة حالياً</p></div>`;
                 return;
             }
 
             filtered.forEach((o, index) => {
                 container.innerHTML += buildOrderCard(o, index, isManager);
+            });
+        };
+
+        window.renderCompletedOrders = function() {
+            const container = document.getElementById('manager-completed-orders-list');
+            const searchInput = document.getElementById('searchCompletedInput')?.value.toLowerCase().trim() || '';
+
+            if(!container) return;
+            container.innerHTML = '';
+
+            const completedOrders = (window.allOrders || []).filter(o => {
+                if (o.status !== 'completed') return false;
+
+                if(!searchInput) return true;
+
+                const phoneMatch = (o.phone || '').includes(searchInput);
+                const zoneMatch = (o.address?.zone || '').toLowerCase().includes(searchInput);
+                const streetMatch = (o.address?.street || '').toLowerCase().includes(searchInput);
+                const houseMatch = (o.address?.house || '').toLowerCase().includes(searchInput);
+                const empMatch = (o.assignedEmp || '').toLowerCase().includes(searchInput);
+                const companyMatch = (o.company || '').toLowerCase().includes(searchInput);
+
+                return phoneMatch || zoneMatch || streetMatch || houseMatch || empMatch || companyMatch;
+            });
+
+            if(completedOrders.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-400 shadow-xs"><i class="fa-solid fa-box-archive text-4xl mb-3 text-slate-300"></i><p class="text-xs font-bold">لا توجد طلبات مكتملة محفوظة تُطابق البحث</p></div>`;
+                return;
+            }
+
+            completedOrders.forEach((o, index) => {
+                container.innerHTML += buildOrderCard(o, index, true);
             });
         };
 
@@ -487,7 +560,7 @@
             if(o.status === 'new') statusBadge = '<span class="bg-sky-50 text-sky-800 border border-sky-200 text-xs px-3 py-1 rounded-full font-bold">جديد 🆕</span>';
             else if(o.status === 'in_progress') statusBadge = '<span class="bg-amber-50 text-amber-800 border border-amber-200 text-xs px-3 py-1 rounded-full font-bold">قيد التنفيذ ⏳</span>';
             else if(o.status === 'not_found') statusBadge = '<span class="bg-orange-50 text-orange-800 border border-orange-200 text-xs px-3 py-1 rounded-full font-bold">مؤجل ⚠️</span>';
-            else if(o.status === 'completed') statusBadge = '<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs px-3 py-1 rounded-full font-bold">مكتمل ✅</span>';
+            else if(o.status === 'completed') statusBadge = '<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs px-3 py-1 rounded-full font-bold">مكتمل ومؤرشف ✅</span>';
 
             let paymentBadge = o.paymentStatus === 'received' 
                 ? '<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] px-3 py-1 rounded-md font-bold">مستلم ✅</span>'
@@ -510,10 +583,10 @@
                         <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
                             <p class="font-bold text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot text-blue-700"></i> الموقع والتفاصيل:</p>
                             <div class="grid grid-cols-2 gap-2 text-xs text-slate-700 font-semibold">
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الزون: <strong class="text-slate-950">${o.address.zone}</strong></span>
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الشارع: <strong class="text-slate-950">${o.address.street}</strong></span>
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الدار: <strong class="text-slate-950">${o.address.house}</strong></span>
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الشقة: <strong class="text-slate-950">${o.address.apartment}</strong></span>
+                                <span class="bg-white p-2 rounded-xl border border-slate-200">الزون: <strong class="text-slate-950">${o.address?.zone || ''}</strong></span>
+                                <span class="bg-white p-2 rounded-xl border border-slate-200">الشارع: <strong class="text-slate-950">${o.address?.street || ''}</strong></span>
+                                <span class="bg-white p-2 rounded-xl border border-slate-200">الدار: <strong class="text-slate-950">${o.address?.house || ''}</strong></span>
+                                <span class="bg-white p-2 rounded-xl border border-slate-200">الشقة: <strong class="text-slate-950">${o.address?.apartment || ''}</strong></span>
                             </div>
                         </div>
 
@@ -624,7 +697,7 @@
                             <span>${order.orderCategory === 'maintenance' ? 'أمر صيانة 🛠️' : 'نصب جديد 🆕'}</span>
                         </div>
                         ${phoneInfo}
-                        <p><strong>العنوان:</strong> زون ${order.address.zone} - شارع ${order.address.street} - دار ${order.address.house}</p>
+                        <p><strong>العنوان:</strong> زون ${order.address?.zone || ''} - شارع ${order.address?.street || ''} - دار ${order.address?.house || ''}</p>
                         <p class="text-slate-500 text-[11px]"><strong>تاريخ التسجيل:</strong> ${timeStr}</p>
                         ${order.assignedEmp ? `<p class="text-blue-800 font-bold"><strong>الموظف المتابع حالياً:</strong> ${order.assignedEmp}</p>` : ''}
                         ${prevEmpHTML}
@@ -749,7 +822,7 @@
                 }
 
                 await updateDoc(orderRef, updateData);
-                showToast("تم تحديث حالة الطلب بنجاح", "success");
+                showToast("تم تحديث حالة الطلب والأرشفة بنجاح", "success");
                 loadOrders(localStorage.getItem('userRole') || 'employee');
             } catch (error) {
                 showToast("حدث خطأ أثناء التحديث", "error");
@@ -781,8 +854,8 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen selection:bg-blue-700 selection:text-white">
 
-    <!-- Toast Notification -->
-    <div id="customToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-xs transition-all duration-300 translate-y-12 opacity-0 pointer-events-none">
+    <!-- Toast Notification (محدث بـ translate-y-16 و pointer-events-none لتختفي نهائياً ولا تبقى عالقة) -->
+    <div id="customToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-xs transition-all duration-300 translate-y-16 opacity-0 pointer-events-none border border-slate-700">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
         <span id="toastMessage">تمت العملية بنجاح!</span>
     </div>
@@ -791,7 +864,6 @@
     <div id="view-login" class="flex items-center justify-center min-h-screen px-4 py-12 bg-gradient-to-b from-slate-100 via-slate-50 to-white">
         <div class="w-full max-w-md bg-white border border-slate-200/90 shadow-2xl shadow-slate-200/60 rounded-3xl p-8 space-y-6">
             
-            <!-- الهيدر والشعار المؤسسي -->
             <div class="text-center space-y-3">
                 <div class="w-16 h-16 bg-blue-50 text-blue-800 rounded-3xl flex items-center justify-center mx-auto text-2xl border border-blue-100 shadow-sm">
                     <i class="fa-solid fa-building-columns"></i>
@@ -845,17 +917,21 @@
                         <p class="text-[11px] font-bold text-slate-500">الموظف: <span id="staff-name" class="font-bold text-blue-700">...</span></p>
                     </div>
                 </div>
-                <button onclick="handleLogout()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200">
-                    <i class="fa-solid fa-right-from-bracket"></i> خروج
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="loadOrders('staff')" title="تحديث البيانات" class="bg-slate-100 hover:bg-slate-200 text-blue-700 p-2.5 rounded-xl text-xs font-bold transition border border-slate-200 flex items-center gap-1">
+                        <i class="fa-solid fa-rotate text-sm"></i>
+                    </button>
+                    <button onclick="handleLogout()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200">
+                        <i class="fa-solid fa-right-from-bracket"></i> خروج
+                    </button>
+                </div>
             </div>
         </header>
 
         <main class="container mx-auto px-4 py-6 space-y-4 max-w-4xl">
-            <!-- فلترة سريعة -->
             <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-3">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 text-xs">تصفية وبحث المهام والأوامر</h3>
+                    <h3 class="font-bold text-slate-800 text-xs">تصفية وبحث المهام والأوامر النشطة</h3>
                     <span class="text-[10px] text-blue-700 font-mono font-extrabold">مزامنة حية ⚡</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -865,11 +941,10 @@
                         <option value="maintenance">🛠️ أوامر الصيانة</option>
                     </select>
                     <select id="sFilterStatus" onchange="renderOrders('staff')" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-2xl p-3 font-bold focus:outline-none">
-                        <option value="ALL">جميع الحالات</option>
+                        <option value="ALL">جميع الحالات النشطة</option>
                         <option value="new">جديد 🆕</option>
                         <option value="in_progress">قيد التنفيذ ⏳</option>
                         <option value="not_found">مؤجل ⚠️</option>
-                        <option value="completed">مكتمل ✅</option>
                     </select>
                 </div>
             </div>
@@ -878,24 +953,52 @@
         </main>
     </div>
 
-    <!-- 3. لوحة المنجَر الفاتحة والرصينة -->
-    <div id="view-manager" class="hidden min-h-screen flex flex-col md:flex-row bg-slate-50">
-        <aside class="w-full md:w-72 bg-white border-l border-slate-200 flex flex-col justify-between p-5 sticky top-0 h-auto md:h-screen z-20 shadow-xs">
+    <!-- 3. لوحة المنجَر المنتظمة -->
+    <div id="view-manager" class="hidden min-h-screen flex flex-col md:flex-row bg-slate-50 relative">
+        
+        <!-- هيدر الموبايل العلوي -->
+        <header class="md:hidden bg-white border-b border-slate-200 p-4 sticky top-0 z-30 flex justify-between items-center shadow-xs">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="w-10 h-10 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center text-lg active:scale-95 transition border border-slate-200">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div>
+                    <h2 class="font-extrabold text-slate-900 text-xs">قسم تكنولوجيا المعلومات</h2>
+                    <p class="text-[10px] font-bold text-blue-700">بوابة الكاظمية</p>
+                </div>
+            </div>
+            
+            <button onclick="loadOrders('manager')" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
+                <i class="fa-solid fa-rotate"></i> تحديث
+            </button>
+        </header>
+
+        <!-- خلفية تظليل السلايد بار بالموبايل -->
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden"></div>
+
+        <!-- القائمة الجانبية (Sidebar / Slidebar) -->
+        <aside id="managerSidebar" class="fixed md:static top-0 right-0 h-full w-72 bg-white border-l border-slate-200 flex flex-col justify-between p-5 z-50 transform translate-x-full md:translate-x-0 transition-transform duration-300 shadow-xl md:shadow-xs">
             <div class="space-y-6">
-                <div class="flex items-center gap-3 px-1 border-b border-slate-100 pb-4">
-                    <div class="w-11 h-11 bg-blue-700 text-white rounded-2xl flex items-center justify-center font-bold shadow-md shadow-blue-700/20">
-                        <i class="fa-solid fa-building-columns"></i>
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 bg-blue-700 text-white rounded-2xl flex items-center justify-center font-bold shadow-md shadow-blue-700/20">
+                            <i class="fa-solid fa-building-columns"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-extrabold text-slate-900 text-xs">تكنولوجيا المعلومات</h2>
+                            <p class="text-[11px] font-black text-blue-700">بوابة الكاظمية</p>
+                            <span class="text-[10px] text-slate-400 font-bold block mt-0.5">المنجر: <span id="manager-name">...</span></span>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="font-extrabold text-slate-900 text-xs">قسم تكنولوجيا المعلومات</h2>
-                        <p class="text-[11px] font-black text-blue-700">بوابة الكاظمية</p>
-                        <span class="text-[10px] text-slate-400 font-bold block mt-0.5">المنجر: <span id="manager-name">...</span></span>
-                    </div>
+                    <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-rose-600 text-lg p-1"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <nav class="space-y-2">
                     <button onclick="switchManagerTab('all-orders')" id="nav-all-orders" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-blue-700 text-white shadow-md shadow-blue-700/20 transition">
-                        <i class="fa-solid fa-layer-group w-4"></i> كافة الطلبات والأوامر
+                        <i class="fa-solid fa-layer-group w-4"></i> كافة الطلبات النشطة
+                    </button>
+                    <button onclick="switchManagerTab('completed-orders')" id="nav-completed-orders" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-box-archive w-4 text-emerald-600"></i> أرشيف الطلبات المكتملة 📁
                     </button>
                     <button onclick="switchManagerTab('new-install')" id="nav-new-install" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
                         <i class="fa-solid fa-file-circle-plus w-4"></i> طلب نصب واشتراك جديد
@@ -909,38 +1012,66 @@
                 </nav>
             </div>
 
-            <div class="pt-4 border-t border-slate-100">
+            <div class="pt-4 border-t border-slate-100 space-y-2">
+                <button onclick="loadOrders('manager')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate text-blue-700"></i> تحديث البيانات الحية
+                </button>
                 <button onclick="handleLogout()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
                 </button>
             </div>
         </aside>
 
+        <!-- المحتوى الرئيسي للمنجَر -->
         <main class="flex-1 p-5 md:p-8 space-y-6 overflow-y-auto">
-            <!-- تبويب السجل العام -->
+            
+            <!-- تبويب الطلبات النشطة -->
             <div id="tab-all-orders" class="space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
                     <div>
-                        <h3 class="font-extrabold text-slate-900 text-base">سجل العمليات العام</h3>
+                        <h3 class="font-extrabold text-slate-900 text-base">سجل الطلبات والأوامر النشطة</h3>
                         <p class="text-xs text-slate-500 font-semibold mt-0.5">قسم تكنولوجيا المعلومات / بوابة الكاظمية</p>
                     </div>
+                    
                     <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <button onclick="loadOrders('manager')" class="hidden md:flex bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-4 py-3 rounded-2xl text-xs font-bold transition items-center gap-1.5">
+                            <i class="fa-solid fa-rotate"></i> تحديث
+                        </button>
                         <select id="mFilterCategory" onchange="renderOrders('manager')" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-2xl px-4 py-3 font-bold focus:outline-none">
                             <option value="ALL">🔍 الكل (نصب + صيانة)</option>
                             <option value="installation">🆕 طلبات النصب</option>
                             <option value="maintenance">🛠️ أوامر الصيانة</option>
                         </select>
                         <select id="mFilterStatus" onchange="renderOrders('manager')" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-2xl px-4 py-3 font-bold focus:outline-none">
-                            <option value="ALL">جميع الحالات</option>
+                            <option value="ALL">جميع الحالات النشطة</option>
                             <option value="new">جديد 🆕</option>
                             <option value="in_progress">قيد التنفيذ ⏳</option>
                             <option value="not_found">مؤجل ⚠️</option>
-                            <option value="completed">مكتمل ✅</option>
                         </select>
                     </div>
                 </div>
 
                 <div id="manager-all-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+            </div>
+
+            <!-- تبويب الطلبات المكتملة والأرشيف -->
+            <div id="tab-completed-orders" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-box-archive text-emerald-600"></i> أرشيف الطلبات والأوامر المكتملة
+                        </h3>
+                        <p class="text-xs text-slate-500 font-semibold mt-0.5">البحث المباشر الدائم في أرشيف الزبائن والمنفذين</p>
+                    </div>
+                    <div class="w-full sm:w-72">
+                        <div class="relative">
+                            <input type="text" id="searchCompletedInput" oninput="renderCompletedOrders()" placeholder="ابحث برقم الهاتف، الزون، الشارع، الدار..." class="w-full pl-3 pr-9 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600">
+                            <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="manager-completed-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
             </div>
 
             <!-- تبويب طلب نصب جديد -->
