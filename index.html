@@ -53,7 +53,49 @@
             }
         };
 
-        // إصلاح دالة التنبيه لضمان الظهور والاختفاء التام دون بقاء عوالق أسفل الصفحة
+        // نظام تشغيل المؤثرات الصوتية التفاعلية
+        window.playBeepSound = function(type = 'success') {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'success') {
+                    // صوت نجاح (نغمة تصاعدية لطيفة)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                } else if (type === 'completed') {
+                    // صوت إتمام الطلب (نغمتين متتاليتين مبهجتين)
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+                } else {
+                    // صوت خطأ أو تنبيه
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                }
+            } catch(e) {
+                console.log("Audio Context not supported or blocked");
+            }
+        };
+
         let toastTimer = null;
         window.showToast = function(message, type = 'success') {
             const toast = document.getElementById('customToast');
@@ -62,21 +104,23 @@
 
             if (!toast) return;
 
-            // إلغاء أي مؤقت سابق لكي تظهر الرسالة الجديدة بشكل نظيف
             if (toastTimer) clearTimeout(toastTimer);
 
             toastMsg.innerText = message;
             if(type === 'success') {
                 toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+                playBeepSound('success');
+            } else if(type === 'completed') {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+                playBeepSound('completed');
             } else {
                 toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-lg";
+                playBeepSound('error');
             }
 
-            // إظهار التنبيه (إزالة الإخفاء وجعله قابل للتفاعل مؤقتاً)
             toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
             toast.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
 
-            // إخفاء التنبيه تلقائياً بعد 3.2 ثانية وإبعاده نهائياً عن الشاشة
             toastTimer = setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
                 toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
@@ -139,7 +183,7 @@
             window.currentPrices.devices[key] = { name, price };
             await saveAllPricesToDb();
             document.getElementById('addDeviceForm').reset();
-            showToast("تم حفظ وسعر الجهاز بنجاح", "success");
+            showToast("تم حفظ الجهاز وتعرّيفه بنجاح", "success");
         };
 
         window.deletePlan = async function(planKey) {
@@ -148,6 +192,31 @@
                 await saveAllPricesToDb();
                 showToast("تم حذف الباقة بنجاح", "success");
             }
+        };
+
+        window.deleteDevice = async function(deviceKey) {
+            if(confirm(`هل أنت متأكد من حذف الجهاز "${deviceKey}"؟`)) {
+                delete window.currentPrices.devices[deviceKey];
+                await saveAllPricesToDb();
+                showToast("تم حذف الجهاز بنجاح", "success");
+            }
+        };
+
+        window.updatePriceDirect = async function(type, key, newPriceVal) {
+            const price = Number(newPriceVal);
+            if(isNaN(price) || price < 0) return;
+
+            if (type === 'plan') {
+                if (window.currentPrices.plans[key]) {
+                    window.currentPrices.plans[key].price = price;
+                }
+            } else if (type === 'device') {
+                if (window.currentPrices.devices[key]) {
+                    window.currentPrices.devices[key].price = price;
+                }
+            }
+            await saveAllPricesToDb();
+            showToast("تم تحديث السعر بنجاح", "success");
         };
 
         async function saveAllPricesToDb() {
@@ -171,7 +240,9 @@
                         <tr class="border-b border-slate-200/60 hover:bg-slate-50/80 transition">
                             <td class="py-3.5 px-4 font-bold text-slate-800 text-xs">${key}</td>
                             <td class="py-3.5 px-4 text-xs font-semibold text-slate-600">${item.company}</td>
-                            <td class="py-3.5 px-4 font-extrabold text-blue-700 text-xs">${item.price.toLocaleString()} د.ع</td>
+                            <td class="py-3.5 px-4 text-xs">
+                                <input type="number" value="${item.price}" onchange="updatePriceDirect('plan', '${key}', this.value)" class="w-28 p-2 bg-white border border-slate-200 rounded-xl font-extrabold text-blue-700 text-xs focus:outline-none focus:border-blue-700"> د.ع
+                            </td>
                             <td class="py-3.5 px-4 text-left">
                                 <button onclick="deletePlan('${key}')" class="text-rose-600 hover:text-rose-800 p-1.5 rounded-xl hover:bg-rose-50 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
                             </td>
@@ -186,9 +257,11 @@
                     devicesTable.innerHTML += `
                         <tr class="border-b border-slate-200/60 hover:bg-slate-50/80 transition">
                             <td class="py-3.5 px-4 font-bold text-slate-800 text-xs">${item.name} <span class="text-[11px] text-slate-400 font-normal">(${key})</span></td>
-                            <td class="py-3.5 px-4 font-extrabold text-blue-700 text-xs">${item.price.toLocaleString()} د.ع</td>
+                            <td class="py-3.5 px-4 text-xs">
+                                <input type="number" value="${item.price}" onchange="updatePriceDirect('device', '${key}', this.value)" class="w-28 p-2 bg-white border border-slate-200 rounded-xl font-extrabold text-blue-700 text-xs focus:outline-none focus:border-blue-700"> د.ع
+                            </td>
                             <td class="py-3.5 px-4 text-left">
-                                <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-3 py-1 rounded-full"><i class="fa-solid fa-circle text-[6px]"></i> مفعل</span>
+                                <button onclick="deleteDevice('${key}')" class="text-rose-600 hover:text-rose-800 p-1.5 rounded-xl hover:bg-rose-50 transition" title="حذف الجهاز"><i class="fa-solid fa-trash-can text-xs"></i></button>
                             </td>
                         </tr>
                     `;
@@ -389,7 +462,7 @@
                     createdAt: serverTimestamp()
                 });
 
-                showToast('تم تسليم طلب النصب بنجاح!', 'success');
+                showToast('تم تسليم طلب النصب بنجاح وخزن النظام!', 'success');
                 document.getElementById('installOrderForm').reset();
                 handleCompanyChange('المشروع الوطني');
                 switchManagerTab('all-orders');
@@ -477,7 +550,6 @@
                 if (userType === 'manager') {
                     renderCompletedOrders();
                 }
-                showToast("تم تحديث وجلب البيانات الحية بنجاح 🔄", "success");
             } catch (error) {
                 console.error("Error loading orders:", error);
             }
@@ -822,7 +894,14 @@
                 }
 
                 await updateDoc(orderRef, updateData);
-                showToast("تم تحديث حالة الطلب والأرشفة بنجاح", "success");
+                
+                // تشغيل صوت مخصص إذا تم إكمال الطلب وأرشفته
+                if (newStatus === 'completed') {
+                    showToast("تم إكمال الطلب ونقله لأرشيف الطلبات المكتملة ✅", "completed");
+                } else {
+                    showToast("تم تحديث حالة الطلب بنجاح", "success");
+                }
+
                 loadOrders(localStorage.getItem('userRole') || 'employee');
             } catch (error) {
                 showToast("حدث خطأ أثناء التحديث", "error");
@@ -854,7 +933,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen selection:bg-blue-700 selection:text-white">
 
-    <!-- Toast Notification (محدث بـ translate-y-16 و pointer-events-none لتختفي نهائياً ولا تبقى عالقة) -->
+    <!-- Toast Notification -->
     <div id="customToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-xs transition-all duration-300 translate-y-16 opacity-0 pointer-events-none border border-slate-700">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
         <span id="toastMessage">تمت العملية بنجاح!</span>
@@ -865,8 +944,8 @@
         <div class="w-full max-w-md bg-white border border-slate-200/90 shadow-2xl shadow-slate-200/60 rounded-3xl p-8 space-y-6">
             
             <div class="text-center space-y-3">
-                <div class="w-16 h-16 bg-blue-50 text-blue-800 rounded-3xl flex items-center justify-center mx-auto text-2xl border border-blue-100 shadow-sm">
-                    <i class="fa-solid fa-building-columns"></i>
+                <div class="w-16 h-16 bg-blue-700 text-white rounded-3xl flex items-center justify-center mx-auto text-xl font-black border border-blue-800 shadow-md tracking-wider">
+                    IT
                 </div>
                 <div>
                     <h1 class="text-lg font-black text-slate-900 tracking-tight">قسم تكنولوجيا المعلومات</h1>
@@ -911,7 +990,7 @@
         <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
             <div class="container mx-auto px-4 py-3.5 flex justify-between items-center">
                 <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 bg-blue-50 text-blue-700 rounded-2xl flex items-center justify-center text-base font-bold border border-blue-100"><i class="fa-solid fa-user-gear"></i></span>
+                    <span class="w-10 h-10 bg-blue-700 text-white rounded-2xl flex items-center justify-center text-sm font-black border border-blue-800 shadow-sm tracking-wider">IT</span>
                     <div>
                         <h2 class="font-extrabold text-slate-900 text-sm">قسم تكنولوجيا المعلومات / بوابة الكاظمية</h2>
                         <p class="text-[11px] font-bold text-slate-500">الموظف: <span id="staff-name" class="font-bold text-blue-700">...</span></p>
@@ -962,9 +1041,12 @@
                 <button onclick="toggleSidebar()" class="w-10 h-10 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center text-lg active:scale-95 transition border border-slate-200">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <div>
-                    <h2 class="font-extrabold text-slate-900 text-xs">قسم تكنولوجيا المعلومات</h2>
-                    <p class="text-[10px] font-bold text-blue-700">بوابة الكاظمية</p>
+                <div class="flex items-center gap-2">
+                    <span class="w-8 h-8 bg-blue-700 text-white rounded-xl flex items-center justify-center text-xs font-black shadow-xs">IT</span>
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-xs">تكنولوجيا المعلومات</h2>
+                        <p class="text-[9px] font-bold text-blue-700">بوابة الكاظمية</p>
+                    </div>
                 </div>
             </div>
             
@@ -973,7 +1055,6 @@
             </button>
         </header>
 
-        <!-- خلفية تظليل السلايد بار بالموبايل -->
         <div id="sidebarOverlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden"></div>
 
         <!-- القائمة الجانبية (Sidebar / Slidebar) -->
@@ -981,8 +1062,8 @@
             <div class="space-y-6">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-blue-700 text-white rounded-2xl flex items-center justify-center font-bold shadow-md shadow-blue-700/20">
-                            <i class="fa-solid fa-building-columns"></i>
+                        <div class="w-11 h-11 bg-blue-700 text-white rounded-2xl flex items-center justify-center text-base font-black shadow-md shadow-blue-700/20 tracking-wider">
+                            IT
                         </div>
                         <div>
                             <h2 class="font-extrabold text-slate-900 text-xs">تكنولوجيا المعلومات</h2>
@@ -1074,7 +1155,7 @@
                 <div id="manager-completed-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
             </div>
 
-            <!-- تبويب طلب نصب جديد -->
+            <!-- تبويب طلب نصب جديد (محدث بخيارات الأجهزة من 1 إلى 10) -->
             <div id="tab-new-install" class="hidden space-y-6 max-w-3xl mx-auto">
                 <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 md:p-8 space-y-6">
                     <div class="border-b border-slate-100 pb-4">
@@ -1140,27 +1221,54 @@
                             </div>
                         </div>
 
+                        <!-- خيارات الأجهزة من 1 إلى 10 -->
                         <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">راوتر:</label>
                                 <select id="installRouter" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
-                                    <option value="1">1</option>
+                                    <option value="0">0 (بدون)</option>
+                                    <option value="1" selected>1</option>
                                     <option value="2">2</option>
-                                    <option value="0">بدون</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">ONU:</label>
                                 <select id="installOnu" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
-                                    <option value="1">1</option>
-                                    <option value="0">بدون</option>
+                                    <option value="0">0 (بدون)</option>
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">UPS:</label>
                                 <select id="installUps" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
+                                    <option value="0">0 (بدون)</option>
                                     <option value="1">1</option>
-                                    <option value="0">بدون</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
                                 </select>
                             </div>
                         </div>
@@ -1281,14 +1389,14 @@
 
                     <!-- جدول الباقات -->
                     <div class="space-y-2">
-                        <h4 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-list-ul text-blue-700 ml-1"></i> الباقات المعتمدة حالياً:</h4>
+                        <h4 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-list-ul text-blue-700 ml-1"></i> الباقات المعتمدة حالياً (يمكنك تعديل السعر مباشرة داخل الخانة):</h4>
                         <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                             <table class="w-full text-right border-collapse">
                                 <thead class="bg-slate-50 text-slate-700 text-[11px] font-bold border-b border-slate-200">
                                     <tr>
                                         <th class="py-3 px-4">عنوان الباقة</th>
                                         <th class="py-3 px-4">الشركة</th>
-                                        <th class="py-3 px-4">السعر</th>
+                                        <th class="py-3 px-4">السعر (د.ع)</th>
                                         <th class="py-3 px-4 text-left">إجراء</th>
                                     </tr>
                                 </thead>
@@ -1301,7 +1409,7 @@
 
                     <!-- إضافة جهاز -->
                     <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200 space-y-3">
-                        <h4 class="font-bold text-slate-900 text-xs flex items-center gap-1.5"><i class="fa-solid fa-box-open text-amber-600"></i> إضافة / تعديل سعر معدة:</h4>
+                        <h4 class="font-bold text-slate-900 text-xs flex items-center gap-1.5"><i class="fa-solid fa-box-open text-amber-600"></i> إضافة معدة / جهاز جديد:</h4>
                         <form id="addDeviceForm" onsubmit="addNewDevice(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                             <div>
                                 <label class="text-[11px] font-bold text-slate-700 block mb-1">رمز الجهاز (router):</label>
@@ -1323,14 +1431,14 @@
 
                     <!-- جدول الأجهزة -->
                     <div class="space-y-2">
-                        <h4 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-boxes-packing text-amber-600 ml-1"></i> قائمة الأجهزة والمعدات:</h4>
+                        <h4 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-boxes-packing text-amber-600 ml-1"></i> قائمة الأجهزة والمعدات (تعديل مباشر أو حذف):</h4>
                         <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
                             <table class="w-full text-right border-collapse">
                                 <thead class="bg-slate-50 text-slate-700 text-[11px] font-bold border-b border-slate-200">
                                     <tr>
                                         <th class="py-3 px-4">اسم الجهاز</th>
-                                        <th class="py-3 px-4">السعر</th>
-                                        <th class="py-3 px-4 text-left">الحالة</th>
+                                        <th class="py-3 px-4">السعر (د.ع)</th>
+                                        <th class="py-3 px-4 text-left">إجراء الحذف</th>
                                     </tr>
                                 </thead>
                                 <tbody id="devicesTableBody"></tbody>
