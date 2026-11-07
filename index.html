@@ -3,17 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>قسم تكنولوجيا المعلومات - بوابة الكاظمية</title>
+    <title>قسم تكنولوجيا المعلومات / بوابة الكاظمية</title>
     <!-- Tailwind CSS v4 -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
     
     <style>
         body {
-            font-family: 'Cairo', sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Tajawal', sans-serif;
             background-color: #f8fafc;
+            color: #0f172a;
+            padding-bottom: 70px;
+        }
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+            transition: all 0.25s ease;
+        }
+        .glass-card:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            border-color: #cbd5e1;
+        }
+        .ios-input {
+            background-color: #f1f5f9;
+            border: 1px solid transparent;
+            border-radius: 0.85rem;
+            padding: 0.8rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+            transition: all 0.2s ease;
+        }
+        .ios-input:focus {
+            background-color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            outline: none;
+        }
+        .kanban-col {
+            background: #f1f5f9;
+            border-radius: 1.25rem;
+            min-height: 500px;
+            border: 1px solid #e2e8f0;
+        }
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #e2e8f0;
+            z-index: 50;
+            display: flex;
+            justify-content: space-around;
+            padding: 0.5rem;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
         }
     </style>
 
@@ -53,44 +112,37 @@
             }
         };
 
-        // نظام تشغيل المؤثرات الصوتية التفاعلية
+        // نغمة نجاح الآيفون الشهيرة (Tri-tone)
         window.playBeepSound = function(type = 'success') {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                if (type === 'success') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
-                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.25);
-                } else if (type === 'completed') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
-                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
-                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.35);
+                if (type === 'success' || type === 'completed') {
+                    const notes = [523.25, 659.25, 783.99];
+                    notes.forEach((freq, index) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (index * 0.08));
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + (index * 0.08));
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (index * 0.08) + 0.25);
+                        osc.start(audioCtx.currentTime + (index * 0.08));
+                        osc.stop(audioCtx.currentTime + (index * 0.08) + 0.25);
+                    });
                 } else {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.2);
                 }
-            } catch(e) {
-                console.log("Audio Context not supported or blocked");
-            }
+            } catch(e) {}
         };
 
         let toastTimer = null;
@@ -98,30 +150,25 @@
             const toast = document.getElementById('customToast');
             const toastMsg = document.getElementById('toastMessage');
             const toastIcon = document.getElementById('toastIcon');
-
             if (!toast) return;
-
             if (toastTimer) clearTimeout(toastTimer);
 
             toastMsg.innerText = message;
-            if(type === 'success') {
+            if(type === 'success' || type === 'completed') {
                 toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
                 playBeepSound('success');
-            } else if(type === 'completed') {
-                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
-                playBeepSound('completed');
             } else {
                 toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-lg";
                 playBeepSound('error');
             }
 
-            toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
             toast.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
 
             toastTimer = setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
-                toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
-            }, 3200);
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3000);
         };
 
         function fileToBase64(file) {
@@ -142,128 +189,7 @@
                     window.currentPrices = docSnap.data();
                 }
                 renderSettingsListsUI();
-            } catch (error) {
-                console.error("خطأ في جلب البيانات:", error);
-            }
-        }
-
-        window.addNewPlan = async function(e) {
-            e.preventDefault();
-            const company = document.getElementById('newPlanCompany').value;
-            const name = document.getElementById('newPlanName').value.trim();
-            const price = Number(document.getElementById('newPlanPrice').value);
-
-            if(!name || !price) {
-                showToast("يرجى إدخال اسم الباقة والسعر الصحيح", "error");
-                return;
-            }
-
-            const planKey = `${company === 'المشروع الوطني' ? 'الوطني' : 'سوبرسيل'} - ${name}`;
-            window.currentPrices.plans[planKey] = { company, price };
-
-            await saveAllPricesToDb();
-            document.getElementById('addPlanForm').reset();
-            showToast("تمت إضافة الباقة بنجاح للنظام", "success");
-        };
-
-        window.addNewDevice = async function(e) {
-            e.preventDefault();
-            const key = document.getElementById('newDeviceKey').value.trim().toLowerCase();
-            const name = document.getElementById('newDeviceName').value.trim();
-            const price = Number(document.getElementById('newDevicePrice').value);
-
-            if(!key || !name || price < 0) {
-                showToast("يرجى إدخال كافة بيانات الجهاز بشكل صحيح", "error");
-                return;
-            }
-
-            window.currentPrices.devices[key] = { name, price };
-            await saveAllPricesToDb();
-            document.getElementById('addDeviceForm').reset();
-            showToast("تم حفظ الجهاز وتعرّيفه بنجاح", "success");
-        };
-
-        window.deletePlan = async function(planKey) {
-            if(confirm(`هل أنت متأكد من حذف باقة "${planKey}"؟`)) {
-                delete window.currentPrices.plans[planKey];
-                await saveAllPricesToDb();
-                showToast("تم حذف الباقة بنجاح", "success");
-            }
-        };
-
-        window.deleteDevice = async function(deviceKey) {
-            if(confirm(`هل أنت متأكد من حذف الجهاز "${deviceKey}"؟`)) {
-                delete window.currentPrices.devices[deviceKey];
-                await saveAllPricesToDb();
-                showToast("تم حذف الجهاز بنجاح", "success");
-            }
-        };
-
-        window.updatePriceDirect = async function(type, key, newPriceVal) {
-            const price = Number(newPriceVal);
-            if(isNaN(price) || price < 0) return;
-
-            if (type === 'plan') {
-                if (window.currentPrices.plans[key]) {
-                    window.currentPrices.plans[key].price = price;
-                }
-            } else if (type === 'device') {
-                if (window.currentPrices.devices[key]) {
-                    window.currentPrices.devices[key].price = price;
-                }
-            }
-            await saveAllPricesToDb();
-            showToast("تم تحديث السعر بنجاح", "success");
-        };
-
-        async function saveAllPricesToDb() {
-            try {
-                await setDoc(doc(db, "settings", "prices_v2"), window.currentPrices);
-                renderSettingsListsUI();
-                handleCompanyChange('المشروع الوطني');
-            } catch (error) {
-                showToast("حدث خطأ في عملية الحفظ السحابي", "error");
-            }
-        }
-
-        function renderSettingsListsUI() {
-            const plansTable = document.getElementById('plansTableBody');
-            const devicesTable = document.getElementById('devicesTableBody');
-
-            if (plansTable) {
-                plansTable.innerHTML = '';
-                Object.entries(window.currentPrices.plans || {}).forEach(([key, item]) => {
-                    plansTable.innerHTML += `
-                        <tr class="border-b border-slate-200/60 hover:bg-slate-50/80 transition">
-                            <td class="py-3.5 px-4 font-bold text-slate-800 text-xs">${key}</td>
-                            <td class="py-3.5 px-4 text-xs font-semibold text-slate-600">${item.company}</td>
-                            <td class="py-3.5 px-4 text-xs">
-                                <input type="number" value="${item.price}" onchange="updatePriceDirect('plan', '${key}', this.value)" class="w-28 p-2 bg-white border border-slate-200 rounded-xl font-extrabold text-blue-700 text-xs focus:outline-none focus:border-blue-700"> د.ع
-                            </td>
-                            <td class="py-3.5 px-4 text-left">
-                                <button onclick="deletePlan('${key}')" class="text-rose-600 hover:text-rose-800 p-1.5 rounded-xl hover:bg-rose-50 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
-
-            if (devicesTable) {
-                devicesTable.innerHTML = '';
-                Object.entries(window.currentPrices.devices || {}).forEach(([key, item]) => {
-                    devicesTable.innerHTML += `
-                        <tr class="border-b border-slate-200/60 hover:bg-slate-50/80 transition">
-                            <td class="py-3.5 px-4 font-bold text-slate-800 text-xs">${item.name} <span class="text-[11px] text-slate-400 font-normal">(${key})</span></td>
-                            <td class="py-3.5 px-4 text-xs">
-                                <input type="number" value="${item.price}" onchange="updatePriceDirect('device', '${key}', this.value)" class="w-28 p-2 bg-white border border-slate-200 rounded-xl font-extrabold text-blue-700 text-xs focus:outline-none focus:border-blue-700"> د.ع
-                            </td>
-                            <td class="py-3.5 px-4 text-left">
-                                <button onclick="deleteDevice('${key}')" class="text-rose-600 hover:text-rose-800 p-1.5 rounded-xl hover:bg-rose-50 transition" title="حذف الجهاز"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
+            } catch (error) {}
         }
 
         window.handleLogin = async function(e) {
@@ -283,7 +209,7 @@
                 routeUser(role, email);
                 showToast('أهلاً بك، تم تسجيل الدخول بنجاح', 'success');
             } catch (error) {
-                showToast('خطأ: يرجى التأكد من البريد الإلكتروني وكلمة المرور', 'error');
+                showToast('خطأ: يرجى التأكد من البريد وكلمة المرور', 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `تسجيل الدخول الآمن <i class="fa-solid fa-arrow-left mr-2 text-xs"></i>`;
@@ -312,11 +238,9 @@
             await signOut(auth);
             localStorage.removeItem('userRole');
             localStorage.removeItem('userEmail');
-            
             document.getElementById('view-manager').classList.add('hidden');
             document.getElementById('view-staff').classList.add('hidden');
             document.getElementById('view-login').classList.remove('hidden');
-            document.getElementById('loginForm').reset();
             showToast('تم تسجيل الخروج بنجاح', 'success');
         };
 
@@ -331,54 +255,30 @@
             }
         });
 
-        window.toggleSidebar = function() {
-            const sidebar = document.getElementById('managerSidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if(sidebar.classList.contains('translate-x-full')) {
-                sidebar.classList.remove('translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        };
-
         window.switchManagerTab = function(tabName) {
-            ['all-orders', 'completed-orders', 'new-install', 'new-maintenance', 'settings'].forEach(t => {
+            ['kanban-orders', 'completed-orders', 'reports', 'new-install', 'new-maintenance', 'settings'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
                 const nav = document.getElementById(`nav-${t}`);
+                const mobileNav = document.getElementById(`mob-nav-${t}`);
                 if(el) el.classList.add('hidden');
-                if(nav) nav.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition";
+                if(nav) nav.className = "px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition";
+                if(mobileNav) mobileNav.className = "flex flex-col items-center text-slate-400 text-[10px] font-bold py-1";
             });
 
             const activeTab = document.getElementById(`tab-${tabName}`);
             const activeNav = document.getElementById(`nav-${tabName}`);
-            if(activeTab) activeTab.classList.remove('hidden');
-            if(activeNav) {
-                if(tabName === 'new-maintenance') {
-                    activeNav.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-amber-500 text-white shadow-md shadow-amber-500/20 transition";
-                } else if(tabName === 'completed-orders') {
-                    activeNav.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-emerald-600 text-white shadow-md shadow-emerald-600/20 transition";
-                } else {
-                    activeNav.className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-blue-700 text-white shadow-md shadow-blue-700/20 transition";
-                }
-            }
+            const activeMobNav = document.getElementById(`mob-nav-${tabName}`);
 
-            if (window.innerWidth < 768) {
-                const sidebar = document.getElementById('managerSidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                if (sidebar) sidebar.classList.add('translate-x-full');
-                if (overlay) overlay.classList.add('hidden');
-            }
+            if(activeTab) activeTab.classList.remove('hidden');
+            if(activeNav) activeNav.className = "px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md shadow-blue-600/20";
+            if(activeMobNav) activeMobNav.className = "flex flex-col items-center text-blue-600 text-[10px] font-black py-1";
         };
 
-        window.handleCompanyChange = function(company) {
-            const planSelect = document.getElementById('planType');
+        window.handleCompanyChange = function(company, targetSelectId = 'planType') {
+            const planSelect = document.getElementById(targetSelectId);
             if(!planSelect) return;
-
             planSelect.innerHTML = '';
             const allPlans = window.currentPrices.plans || {};
-
             Object.entries(allPlans).forEach(([key, item]) => {
                 if (item.company === company) {
                     planSelect.innerHTML += `<option value="${key}">${key} (${item.price.toLocaleString()} د.ع)</option>`;
@@ -390,14 +290,13 @@
             e.preventDefault();
             const btn = document.getElementById('submitInstallBtn');
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري إرسال الطلب...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري الإرسال...`;
 
             try {
                 const company = document.querySelector('input[name="installCompany"]:checked').value;
                 const planKey = document.getElementById('planType').value;
                 const phone = document.getElementById('installPhone').value;
                 const paymentStatus = document.getElementById('installPayment').value;
-
                 const zone = document.getElementById('installZone').value;
                 const street = document.getElementById('installStreet').value;
                 const house = document.getElementById('installHouse').value;
@@ -413,15 +312,12 @@
                 const devOnu = window.currentPrices.devices.onu?.price || 15000;
                 const devUps = window.currentPrices.devices.ups?.price || 10000;
 
-                const planPrice = planObj.price;
-                const devicesPrice = (routerQty * devRouter) + (onuQty * devOnu) + (upsQty * devUps);
-                const totalPrice = planPrice + devicesPrice;
-
+                const totalPrice = planObj.price + (routerQty * devRouter) + (onuQty * devOnu) + (upsQty * devUps);
                 const frontFile = document.getElementById('frontImage').files[0];
                 const backFile = document.getElementById('backImage').files[0];
 
                 if (company === 'المشروع الوطني' && (!frontFile || !backFile)) {
-                    showToast('تنبيه: المشروع الوطني يتطلب ارفاق صورتي البطاقة الوطنية!', 'error');
+                    showToast('المشروع الوطني يتطلب صورتي البطاقة الوطنية!', 'error');
                     btn.disabled = false;
                     btn.innerHTML = `إرسال طلب النصب`;
                     return;
@@ -430,45 +326,26 @@
                 const frontUrl = await fileToBase64(frontFile);
                 const backUrl = await fileToBase64(backFile);
 
-                let notesArray = [];
-                if (initialNotes) {
-                    notesArray.push({
-                        sender: "المنجر (إنشاء الطلب)",
-                        text: initialNotes,
-                        time: new Date().toLocaleString('ar-IQ')
-                    });
-                }
+                let notesArray = initialNotes ? [{ sender: "المنجر", text: initialNotes, time: new Date().toLocaleString('ar-IQ') }] : [];
 
                 await addDoc(collection(db, "orders"), {
                     orderCategory: "installation",
-                    company,
-                    plan: planKey,
-                    planPrice,
-                    devicesPrice,
-                    totalPrice,
-                    paymentStatus,
-                    phone,
+                    company, plan: planKey, totalPrice, paymentStatus, phone,
                     address: { zone, street, house, apartment },
                     hardware: { router: routerQty, onu: onuQty, ups: upsQty },
-                    notesList: notesArray,
-                    frontImg: frontUrl || null,
-                    backImg: backUrl || null,
-                    status: "new",
-                    assignedEmp: null,
-                    previousEmployees: [],
-                    createdAt: serverTimestamp()
+                    notesList: notesArray, frontImg: frontUrl || null, backImg: backUrl || null,
+                    status: "new", assignedEmp: null, previousEmployees: [], createdAt: serverTimestamp()
                 });
 
-                showToast('تم تسليم طلب النصب بنجاح وخزن النظام!', 'success');
+                showToast('تم إرسال طلب النصب بنجاح وخزنه سحابياً!', 'success');
                 document.getElementById('installOrderForm').reset();
-                handleCompanyChange('المشروع الوطني');
-                switchManagerTab('all-orders');
+                switchManagerTab('kanban-orders');
                 loadOrders('manager');
             } catch (error) {
-                showToast('حدث خطأ أثناء حفظ الطلب', 'error');
+                showToast('حدث خطأ أثناء الحفظ', 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane ml-2"></i> إرسال طلب النصب`;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> إرسال طلب النصب`;
             }
         };
 
@@ -476,484 +353,468 @@
             e.preventDefault();
             const btn = document.getElementById('submitMaintBtn');
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري الإرسال...`;
 
             try {
                 const company = document.querySelector('input[name="maintCompany"]:checked').value;
                 const issueDescription = document.getElementById('maintIssue').value.trim();
-
                 const zone = document.getElementById('maintZone').value;
                 const street = document.getElementById('maintStreet').value;
                 const house = document.getElementById('maintHouse').value;
                 const apartment = document.getElementById('maintApartment').value || 'لا يوجد';
 
-                let notesArray = [];
-                if (issueDescription) {
-                    notesArray.push({
-                        sender: "المنجر (بلاغ عطل)",
-                        text: issueDescription,
-                        time: new Date().toLocaleString('ar-IQ')
-                    });
-                }
+                let notesArray = issueDescription ? [{ sender: "المنجر", text: issueDescription, time: new Date().toLocaleString('ar-IQ') }] : [];
 
                 await addDoc(collection(db, "orders"), {
                     orderCategory: "maintenance",
-                    company,
-                    plan: "أوردر صيانة وإنقطاع",
-                    totalPrice: 0,
-                    paymentStatus: "pending",
-                    phone: "غير مطلوب",
+                    company, plan: "أوردر صيانة وإنقطاع", totalPrice: 0, paymentStatus: "pending", phone: "غير مطلوب",
                     address: { zone, street, house, apartment },
                     hardware: { router: 0, onu: 0, ups: 0 },
-                    notesList: notesArray,
-                    frontImg: null,
-                    backImg: null,
-                    status: "new",
-                    assignedEmp: null,
-                    previousEmployees: [],
-                    createdAt: serverTimestamp()
+                    notesList: notesArray, frontImg: null, backImg: null,
+                    status: "new", assignedEmp: null, previousEmployees: [], createdAt: serverTimestamp()
                 });
 
-                showToast('تم تسجيل أمر الصيانة وتحويله للموظفين بنجاح', 'success');
+                showToast('تم تسجيل أمر الصيانة وتحويله للموظفين', 'success');
                 document.getElementById('maintOrderForm').reset();
-                switchManagerTab('all-orders');
+                switchManagerTab('kanban-orders');
                 loadOrders('manager');
             } catch (error) {
-                showToast('حدث خطأ أثناء حفظ أمر الصيانة', 'error');
+                showToast('خطأ في إرسال الصيانة', 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane ml-2"></i> إرسال أمر الصيانة للموظفين`;
             }
         };
 
         window.loadOrders = async function(userType) {
-            const listId = userType === 'manager' ? 'manager-all-orders-list' : 'staff-all-orders-list';
-            const container = document.getElementById(listId);
-
-            if(container) {
-                container.innerHTML = `<div class="col-span-full text-center py-16 text-slate-400 bg-white rounded-3xl border border-slate-200"><i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-blue-700"></i><p class="text-xs font-bold">جاري تحميل البيانات والأوامر الميدانية...</p></div>`;
-            }
-
             try {
                 const q = query(collection(db, "orders"), orderBy("createdAt", "asc"));
                 const querySnapshot = await getDocs(q);
-                
                 window.allOrders = [];
                 querySnapshot.forEach((docSnap) => {
                     window.allOrders.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                renderOrders(userType);
+                populateZoneFilterOptions();
+
                 if (userType === 'manager') {
+                    renderKanbanBoard();
+                    updateDashboardStats();
                     renderCompletedOrders();
+                    generateReport();
+                } else {
+                    renderStaffKanban();
                 }
-            } catch (error) {
-                console.error("Error loading orders:", error);
-            }
+            } catch (error) {}
         };
 
-        window.renderOrders = function(userType) {
-            const isManager = userType === 'manager';
-            const containerId = isManager ? 'manager-all-orders-list' : 'staff-all-orders-list';
-            const catFilterId = isManager ? 'mFilterCategory' : 'sFilterCategory';
-            const statusFilterId = isManager ? 'mFilterStatus' : 'sFilterStatus';
+        function populateZoneFilterOptions() {
+            const filterZoneSelect = document.getElementById('filterZoneSelect');
+            if (!filterZoneSelect) return;
 
-            const container = document.getElementById(containerId);
-            if(!container) return;
+            const currentVal = filterZoneSelect.value;
+            filterZoneSelect.innerHTML = `<option value="ALL">جميع الزونات / المحلات</option>`;
 
-            const categoryFilter = document.getElementById(catFilterId)?.value || 'ALL';
-            const statusFilter = document.getElementById(statusFilterId)?.value || 'ALL';
-
-            container.innerHTML = '';
-
-            const filtered = (window.allOrders || []).filter(o => {
-                if(o.status === 'completed') {
-                    return false;
-                }
-                const cat = o.orderCategory || 'installation';
-                const matchCat = categoryFilter === 'ALL' || cat === categoryFilter;
-                const matchStat = statusFilter === 'ALL' || o.status === statusFilter;
-                return matchCat && matchStat;
+            const zonesSet = new Set();
+            (window.allOrders || []).forEach(o => {
+                if (o.address?.zone) zonesSet.add(o.address.zone);
             });
 
-            if(filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-400 shadow-xs"><i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i><p class="text-xs font-bold">لا توجد طلبات نشطة حالياً</p></div>`;
+            Array.from(zonesSet).sort().forEach(zone => {
+                filterZoneSelect.innerHTML += `<option value="${zone}">${zone}</option>`;
+            });
+
+            filterZoneSelect.value = currentVal;
+        }
+
+        function updateDashboardStats() {
+            const orders = window.allOrders || [];
+            let active = 0, install = 0, maint = 0, completed = 0;
+            orders.forEach(o => {
+                if(o.status === 'completed') completed++;
+                else {
+                    active++;
+                    if(o.orderCategory === 'maintenance') maint++;
+                    else install++;
+                }
+            });
+            if(document.getElementById('statActiveOrders')) document.getElementById('statActiveOrders').innerText = active;
+            if(document.getElementById('statInstallOrders')) document.getElementById('statInstallOrders').innerText = install;
+            if(document.getElementById('statMaintOrders')) document.getElementById('statMaintOrders').innerText = maint;
+            if(document.getElementById('statCompletedOrders')) document.getElementById('statCompletedOrders').innerText = completed;
+        }
+
+        window.renderKanbanBoard = function() {
+            const newCol = document.getElementById('kanban-col-new');
+            const progressCol = document.getElementById('kanban-col-progress');
+            const deferCol = document.getElementById('kanban-col-defer');
+
+            if(!newCol) return;
+            newCol.innerHTML = '';
+            progressCol.innerHTML = '';
+            deferCol.innerHTML = '';
+
+            const zoneFilter = document.getElementById('filterZoneSelect')?.value || 'ALL';
+            const companyFilter = document.getElementById('filterCompanySelect')?.value || 'ALL';
+            const searchInput = document.getElementById('filterSearchInput')?.value.toLowerCase().trim() || '';
+
+            const activeOrders = (window.allOrders || []).filter(o => {
+                if (o.status === 'completed') return false;
+
+                const matchZone = zoneFilter === 'ALL' || (o.address?.zone || '') === zoneFilter;
+                const matchCompany = companyFilter === 'ALL' || o.company === companyFilter;
+                const matchSearch = !searchInput || (o.phone || '').includes(searchInput) || (o.address?.zone || '').toLowerCase().includes(searchInput) || (o.address?.street || '').toLowerCase().includes(searchInput);
+
+                return matchZone && matchCompany && matchSearch;
+            });
+
+            if(activeOrders.length === 0) {
+                newCol.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">لا توجد طلبات مطابقة للتصفية</p>`;
                 return;
             }
 
-            filtered.forEach((o, index) => {
-                container.innerHTML += buildOrderCard(o, index, isManager);
+            activeOrders.forEach(o => {
+                const cardHTML = buildKanbanCard(o, true);
+                if(o.status === 'new') newCol.innerHTML += cardHTML;
+                else if(o.status === 'in_progress') progressCol.innerHTML += cardHTML;
+                else if(o.status === 'not_found') deferCol.innerHTML += cardHTML;
             });
         };
 
-        window.renderCompletedOrders = function() {
-            const container = document.getElementById('manager-completed-orders-list');
-            const searchInput = document.getElementById('searchCompletedInput')?.value.toLowerCase().trim() || '';
+        window.renderStaffKanban = function() {
+            const newCol = document.getElementById('staff-col-new');
+            const progressCol = document.getElementById('staff-col-progress');
+            const deferCol = document.getElementById('staff-col-defer');
+            if(!newCol) return;
 
-            if(!container) return;
-            container.innerHTML = '';
+            newCol.innerHTML = '';
+            progressCol.innerHTML = '';
+            deferCol.innerHTML = '';
 
-            const completedOrders = (window.allOrders || []).filter(o => {
-                if (o.status !== 'completed') return false;
-
-                if(!searchInput) return true;
-
-                const phoneMatch = (o.phone || '').includes(searchInput);
-                const zoneMatch = (o.address?.zone || '').toLowerCase().includes(searchInput);
-                const streetMatch = (o.address?.street || '').toLowerCase().includes(searchInput);
-                const houseMatch = (o.address?.house || '').toLowerCase().includes(searchInput);
-                const empMatch = (o.assignedEmp || '').toLowerCase().includes(searchInput);
-                const companyMatch = (o.company || '').toLowerCase().includes(searchInput);
-
-                return phoneMatch || zoneMatch || streetMatch || houseMatch || empMatch || companyMatch;
+            const activeOrders = (window.allOrders || []).filter(o => o.status !== 'completed');
+            activeOrders.forEach(o => {
+                const cardHTML = buildKanbanCard(o, false);
+                if(o.status === 'new') newCol.innerHTML += cardHTML;
+                else if(o.status === 'in_progress') progressCol.innerHTML += cardHTML;
+                else if(o.status === 'not_found') deferCol.innerHTML += cardHTML;
             });
+        };
 
-            if(completedOrders.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-400 shadow-xs"><i class="fa-solid fa-box-archive text-4xl mb-3 text-slate-300"></i><p class="text-xs font-bold">لا توجد طلبات مكتملة محفوظة تُطابق البحث</p></div>`;
-                return;
+        function buildKanbanCard(o, isManager) {
+            const isMaint = o.orderCategory === 'maintenance';
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=زون+${o.address?.zone || ''}+شارع+${o.address?.street || ''}`;
+
+            let idCardButtons = '';
+            if (o.frontImg || o.backImg) {
+                idCardButtons = `
+                    <div class="grid grid-cols-2 gap-1.5 pt-1">
+                        ${o.frontImg ? `<button onclick="openImageModal('${o.frontImg}', 'صورة البطاقة - الوجه الأمامي')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2 rounded-xl text-[10px] flex items-center justify-center gap-1 border border-indigo-100"><i class="fa-solid fa-id-card"></i> وجه البطاقة</button>` : '<div></div>'}
+                        ${o.backImg ? `<button onclick="openImageModal('${o.backImg}', 'صورة البطاقة - الوجه الخلفي')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-2 rounded-xl text-[10px] flex items-center justify-center gap-1 border border-indigo-100"><i class="fa-solid fa-id-card"></i> ظهر البطاقة</button>` : '<div></div>'}
+                    </div>
+                `;
             }
 
-            completedOrders.forEach((o, index) => {
-                container.innerHTML += buildOrderCard(o, index, true);
-            });
-        };
+            const assignedEmpBadge = o.assignedEmp 
+                ? `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1"><i class="fa-solid fa-user-check"></i> الموظف: ${o.assignedEmp}</span>`
+                : `<span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-lg">غير مستلم ⏳</span>`;
 
-        function buildOrderCard(o, index, isManager) {
-            const isMaintenance = o.orderCategory === 'maintenance';
-
-            let categoryBadge = isMaintenance 
-                ? '<span class="bg-amber-50 text-amber-800 border border-amber-200 text-[11px] px-3 py-1 rounded-full font-bold inline-flex items-center gap-1.5"><i class="fa-solid fa-wrench"></i> أمر صيانة / عطل</span>'
-                : '<span class="bg-blue-50 text-blue-800 border border-blue-200 text-[11px] px-3 py-1 rounded-full font-bold inline-flex items-center gap-1.5"><i class="fa-solid fa-plus-circle"></i> نصب جديد</span>';
-
-            let statusBadge = '';
-            if(o.status === 'new') statusBadge = '<span class="bg-sky-50 text-sky-800 border border-sky-200 text-xs px-3 py-1 rounded-full font-bold">جديد 🆕</span>';
-            else if(o.status === 'in_progress') statusBadge = '<span class="bg-amber-50 text-amber-800 border border-amber-200 text-xs px-3 py-1 rounded-full font-bold">قيد التنفيذ ⏳</span>';
-            else if(o.status === 'not_found') statusBadge = '<span class="bg-orange-50 text-orange-800 border border-orange-200 text-xs px-3 py-1 rounded-full font-bold">مؤجل ⚠️</span>';
-            else if(o.status === 'cancelled') statusBadge = '<span class="bg-rose-50 text-rose-800 border border-rose-200 text-xs px-3 py-1 rounded-full font-bold">ملغي ❌</span>';
-            else if(o.status === 'completed') statusBadge = '<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs px-3 py-1 rounded-full font-bold">مكتمل ومؤرشف ✅</span>';
-
-            let paymentBadge = o.paymentStatus === 'received' 
-                ? '<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] px-3 py-1 rounded-md font-bold">مستلم ✅</span>'
-                : '<span class="bg-amber-50 text-amber-800 border border-amber-200 text-[11px] px-3 py-1 rounded-md font-bold">آجل ⏳</span>';
-
-            // زر الحذف النهائي الصغير بدون كتابة (أيقونة فقط) وفي أعلى التكت
-            let deleteBtnHTML = isManager ? `
-                <button onclick="openDeleteConfirmModal('${o.id}')" class="w-9 h-9 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center transition border border-rose-200 shadow-2xs" title="حذف نهائي">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                </button>
-            ` : '';
+            // عرض الأجهزة المطلوبة للزبون
+            let hardwareDetailsHTML = '';
+            if (!isMaint && o.hardware) {
+                hardwareDetailsHTML = `
+                    <div class="flex justify-between items-center bg-slate-100/80 p-2 rounded-xl text-[11px] font-bold text-slate-800">
+                        <span class="text-slate-400">الأجهزة المطلوبة:</span>
+                        <div class="flex gap-2">
+                            <span class="bg-white px-2 py-0.5 rounded border">راوتر: ${o.hardware.router || 0}</span>
+                            <span class="bg-white px-2 py-0.5 rounded border">ONU: ${o.hardware.onu || 0}</span>
+                            <span class="bg-white px-2 py-0.5 rounded border">UPS: ${o.hardware.ups || 0}</span>
+                        </div>
+                    </div>
+                `;
+            }
 
             return `
-                <div class="bg-white rounded-3xl border ${isMaintenance ? 'border-amber-200 shadow-amber-500/5' : 'border-slate-200'} shadow-sm hover:shadow-md transition-all p-6 space-y-4 relative">
-                    <!-- رأس التكت: يحتوي على الشعار والحالة وزر الحذف الصغير في الأعلى -->
-                    <div class="flex justify-between items-start border-b border-slate-100 pb-3.5">
+                <div class="glass-card p-4 space-y-3 bg-white border border-slate-200">
+                    <div class="flex justify-between items-start">
                         <div>
-                            <div class="mb-2">${categoryBadge}</div>
-                            <span class="font-extrabold text-slate-900 text-base">${o.company}</span>
-                            <span class="block text-xs font-bold ${isMaintenance ? 'text-amber-700' : 'text-blue-700'} mt-0.5">${o.plan || ''}</span>
+                            <span class="text-[10px] font-black px-2 py-0.5 rounded-md ${isMaint ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
+                                ${isMaint ? '🛠️ صيانة' : '🆕 نصب'}
+                            </span>
+                            <h5 class="font-black text-slate-900 text-xs mt-1.5">${o.company}</h5>
+                            <p class="text-[11px] font-bold text-slate-600">${o.plan || ''}</p>
                         </div>
-                        <div class="flex items-center gap-2">
-                            ${statusBadge}
-                            ${deleteBtnHTML}
+                        <div class="flex items-center gap-1">
+                            ${isManager ? `
+                                <button onclick="openEditOrderModal('${o.id}')" class="text-blue-600 hover:text-blue-800 text-xs p-1" title="تعديل الأوردر"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="openDeleteConfirmModal('${o.id}')" class="text-rose-500 hover:text-rose-700 text-xs p-1" title="حذف الأوردر"><i class="fa-solid fa-trash-can"></i></button>
+                            ` : ''}
                         </div>
                     </div>
 
-                    <div class="text-xs space-y-3 text-slate-600">
-                        ${!isMaintenance ? `<p class="flex items-center gap-2.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80"><i class="fa-solid fa-phone text-blue-700"></i><strong class="text-slate-800">رقم الهاتف:</strong> <span dir="ltr" class="font-mono font-bold text-slate-900">${o.phone}</span></p>` : ''}
+                    <div class="space-y-1.5 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-semibold">
+                        ${!isMaint ? `<div class="flex justify-between"><span class="text-slate-400">الهاتف:</span><span dir="ltr" class="font-mono text-slate-900">${o.phone}</span></div>` : ''}
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-400">العنوان:</span>
+                            <a href="${mapsUrl}" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1 font-bold">
+                                زون ${o.address?.zone || ''} - ش ${o.address?.street || ''} <i class="fa-solid fa-location-arrow text-[10px]"></i>
+                            </a>
+                        </div>
+                        ${!isMaint ? `<div class="flex justify-between"><span class="text-slate-400">المبلغ:</span><strong class="text-emerald-600">${(o.totalPrice || 0).toLocaleString()} د.ع</strong></div>` : ''}
                         
-                        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
-                            <p class="font-bold text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot text-blue-700"></i> الموقع والتفاصيل:</p>
-                            <div class="grid grid-cols-2 gap-2 text-xs text-slate-700 font-semibold">
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الزون: <strong class="text-slate-950">${o.address?.zone || ''}</strong></span>
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الشارع: <strong class="text-slate-950">${o.address?.street || ''}</strong></span>
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الدار: <strong class="text-slate-950">${o.address?.house || ''}</strong></span>
-                                <span class="bg-white p-2 rounded-xl border border-slate-200">الشقة: <strong class="text-slate-950">${o.address?.apartment || ''}</strong></span>
-                            </div>
-                        </div>
+                        ${hardwareDetailsHTML}
 
-                        ${!isMaintenance ? `
-                            <div class="flex items-center justify-between text-xs bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-                                <span class="font-bold text-slate-800">المعدات:</span>
-                                <div class="flex gap-2 font-bold">
-                                    <span class="bg-white px-2.5 py-1 rounded-xl border border-slate-200 text-blue-800">راوتر: ${o.hardware?.router || 0}</span>
-                                    <span class="bg-white px-2.5 py-1 rounded-xl border border-slate-200 text-teal-800">ONU: ${o.hardware?.onu || 0}</span>
-                                    <span class="bg-white px-2.5 py-1 rounded-xl border border-slate-200 text-purple-800">UPS: ${o.hardware?.ups || 0}</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center pt-1 px-1">
-                                <span class="font-black text-slate-900 text-base">${(o.totalPrice || 0).toLocaleString()} د.ع</span>
-                                <div>${paymentBadge}</div>
-                            </div>
-                        ` : ''}
+                        <div class="flex justify-between items-center pt-1 border-t border-slate-200/60">
+                            <span class="text-slate-400">الموظف المسؤول:</span>
+                            ${assignedEmpBadge}
+                        </div>
                     </div>
 
-                    <div class="pt-1">
-                        <button onclick="openTicketDetailsModal('${o.id}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-2xl text-xs transition flex items-center justify-center gap-2 border border-slate-200 shadow-2xs">
-                            <i class="fa-solid fa-rectangle-list text-blue-700 text-sm"></i> عرض السجل الموثق وتفاصيل السجل 📋
+                    ${idCardButtons}
+
+                    <div class="flex gap-1.5 pt-1">
+                        <button onclick="openTicketDetailsModal('${o.id}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-[11px] transition">
+                            التفاصيل وسجل الملاحظات 📋
                         </button>
                     </div>
 
                     ${!isManager ? `
-                        <div class="pt-2 space-y-2.5">
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <button onclick="updateOrderStatus('${o.id}', 'in_progress', '${o.assignedEmp || ''}')" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-2xl text-xs transition shadow-sm active:scale-95 text-center">
-                                    استلام ⏳
-                                </button>
-                                <button onclick="openDeferModal('${o.id}', '${o.assignedEmp || ''}')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl text-xs transition shadow-sm active:scale-95 text-center">
-                                    تأجيل ⚠️
-                                </button>
-                                <button onclick="updateOrderStatus('${o.id}', 'completed', '${o.assignedEmp || ''}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-sm active:scale-95 text-center">
-                                    مكتمل ✅
-                                </button>
-                                <button onclick="updateOrderStatus('${o.id}', 'cancelled', '${o.assignedEmp || ''}')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-sm active:scale-95 text-center">
-                                    إلغاء ❌
-                                </button>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                ${!isMaintenance ? `
-                                    <button onclick="updatePaymentStatus('${o.id}', '${o.paymentStatus === 'received' ? 'pending' : 'received'}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold py-2.5 rounded-2xl text-xs transition text-center">
-                                        تعديل حالة الدفع
-                                    </button>
-                                ` : `<div></div>`}
-                                <button onclick="openNoteModal('${o.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 rounded-2xl text-xs transition text-center col-span-2 border border-slate-200">
-                                    إضافة ملاحظة جديدة 📝
-                                </button>
-                            </div>
+                        <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100">
+                            <button onclick="updateOrderStatus('${o.id}', 'in_progress', '${o.assignedEmp || ''}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-[10px]">استلام وتنفيذ ⏳</button>
+                            <button onclick="updateOrderStatus('${o.id}', 'completed', '${o.assignedEmp || ''}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-[10px]">إكمال الطلب ✅</button>
+                            <button onclick="openDeferModal('${o.id}', '${o.assignedEmp || ''}')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-xl text-[10px]">تأجيل ⚠️</button>
+                            <button onclick="openNoteModal('${o.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded-xl text-[10px]">ملاحظة صوتية 🎤</button>
                         </div>
                     ` : ''}
                 </div>
             `;
         }
 
-        // إشعار النافذة المنبثقة لتأكيد الحذف
-        window.openDeleteConfirmModal = function(orderId) {
-            document.getElementById('confirmDeleteTargetId').value = orderId;
-            document.getElementById('deleteConfirmModalContainer').classList.remove('hidden');
-        };
-
-        window.closeDeleteConfirmModal = function() {
-            document.getElementById('deleteConfirmModalContainer').classList.add('hidden');
-        };
-
-        window.confirmDeleteOrder = async function() {
-            const orderId = document.getElementById('confirmDeleteTargetId').value;
-            if (!orderId) return;
-
-            try {
-                await deleteDoc(doc(db, "orders", orderId));
-                showToast("تم حذف الأوردر نهائياً من النظام 🗑️", "error");
-                closeDeleteConfirmModal();
-                loadOrders(localStorage.getItem('userRole') || 'employee');
-            } catch (error) {
-                showToast("حدث خطأ أثناء محاولة الحذف", "error");
-            }
-        };
-
-        window.openTicketDetailsModal = async function(orderId) {
+        window.openEditOrderModal = function(orderId) {
             const order = (window.allOrders || []).find(o => o.id === orderId);
             if (!order) return;
 
-            document.getElementById('detailsModalContainer').classList.remove('hidden');
-            
-            let timeStr = 'الآن';
-            if(order.createdAt && order.createdAt.seconds) {
-                timeStr = new Date(order.createdAt.seconds * 1000).toLocaleString('ar-IQ');
+            document.getElementById('editOrderId').value = order.id;
+            document.getElementById('editCompany').value = order.company;
+            handleCompanyChange(order.company, 'editPlanType');
+            document.getElementById('editPlanType').value = order.plan;
+            document.getElementById('editPhone').value = order.phone || '';
+            document.getElementById('editPayment').value = order.paymentStatus || 'pending';
+
+            document.getElementById('editZone').value = order.address?.zone || '';
+            document.getElementById('editStreet').value = order.address?.street || '';
+            document.getElementById('editHouse').value = order.address?.house || '';
+            document.getElementById('editApartment').value = order.address?.apartment || '';
+
+            document.getElementById('editRouter').value = order.hardware?.router || 0;
+            document.getElementById('editOnu').value = order.hardware?.onu || 0;
+            document.getElementById('editUps').value = order.hardware?.ups || 0;
+
+            document.getElementById('editOrderModalContainer').classList.remove('hidden');
+        };
+
+        window.closeEditOrderModal = function() {
+            document.getElementById('editOrderModalContainer').classList.add('hidden');
+        };
+
+        window.saveEditedOrder = async function(e) {
+            e.preventDefault();
+            const orderId = document.getElementById('editOrderId').value;
+            if(!orderId) return;
+
+            try {
+                const company = document.getElementById('editCompany').value;
+                const planKey = document.getElementById('editPlanType').value;
+                const phone = document.getElementById('editPhone').value;
+                const paymentStatus = document.getElementById('editPayment').value;
+
+                const zone = document.getElementById('editZone').value;
+                const street = document.getElementById('editStreet').value;
+                const house = document.getElementById('editHouse').value;
+                const apartment = document.getElementById('editApartment').value;
+
+                const routerQty = Number(document.getElementById('editRouter').value);
+                const onuQty = Number(document.getElementById('editOnu').value);
+                const upsQty = Number(document.getElementById('editUps').value);
+
+                const planObj = window.currentPrices.plans[planKey] || { price: 0 };
+                const devRouter = window.currentPrices.devices.router?.price || 25000;
+                const devOnu = window.currentPrices.devices.onu?.price || 15000;
+                const devUps = window.currentPrices.devices.ups?.price || 10000;
+
+                const totalPrice = planObj.price + (routerQty * devRouter) + (onuQty * devOnu) + (upsQty * devUps);
+
+                const orderRef = doc(db, "orders", orderId);
+                await updateDoc(orderRef, {
+                    company,
+                    plan: planKey,
+                    phone,
+                    paymentStatus,
+                    totalPrice,
+                    address: { zone, street, house, apartment },
+                    hardware: { router: routerQty, onu: onuQty, ups: upsQty }
+                });
+
+                showToast("تم تعديل بيانات الأوردر بنجاح ✏️", "success");
+                closeEditOrderModal();
+                loadOrders(localStorage.getItem('userRole') || 'manager');
+            } catch (error) {
+                showToast("حدث خطأ أثناء تعديل الأوردر", "error");
+            }
+        };
+
+        window.renderCompletedOrders = function() {
+            const container = document.getElementById('manager-completed-orders-list');
+            const searchInput = document.getElementById('searchCompletedInput')?.value.toLowerCase().trim() || '';
+            if(!container) return;
+            container.innerHTML = '';
+
+            const completed = (window.allOrders || []).filter(o => {
+                if (o.status !== 'completed') return false;
+                if(!searchInput) return true;
+                return (o.phone || '').includes(searchInput) || (o.address?.zone || '').toLowerCase().includes(searchInput);
+            });
+
+            if(completed.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-12">لا توجد طلبات مكتملة مطابقة للبحث</p>`;
+                return;
             }
 
-            let prevEmpHTML = '';
-            if (order.previousEmployees && order.previousEmployees.length > 0) {
-                prevEmpHTML = `<p class="text-xs text-rose-800 font-bold mb-2 bg-rose-50 p-3 rounded-2xl border border-rose-200"><i class="fa-solid fa-clock-rotate-left"></i> موظفون سابقون تابعوا الطلب: ${order.previousEmployees.join('، ')}</p>`;
-            }
-
-            let imagesHTML = '';
-            if (order.frontImg || order.backImg) {
-                imagesHTML = `
-                    <div class="border-t border-slate-200 pt-4 mt-3">
-                        <p class="font-bold text-xs text-slate-800 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-id-card text-blue-700"></i> صور المستمسكات المرفقة:</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            ${order.frontImg ? `<button onclick="openImageModal('${order.frontImg}', 'صورة البطاقة - الوجه الأمامي')" class="bg-slate-50 hover:bg-slate-100 text-slate-800 p-3 rounded-2xl text-xs font-bold border border-slate-200 flex items-center justify-center gap-1.5"><i class="fa-solid fa-eye text-blue-700"></i> الوجه الأمامي</button>` : ''}
-                            ${order.backImg ? `<button onclick="openImageModal('${order.backImg}', 'صورة البطاقة - الوجه الخلفي')" class="bg-slate-50 hover:bg-slate-100 text-slate-800 p-3 rounded-2xl text-xs font-bold border border-slate-200 flex items-center justify-center gap-1.5"><i class="fa-solid fa-eye text-blue-700"></i> الوجه الخلفي</button>` : ''}
+            completed.forEach(o => {
+                container.innerHTML += `
+                    <div class="glass-card p-4 flex justify-between items-center text-xs bg-white">
+                        <div>
+                            <span class="font-black text-slate-900">${o.company} - ${o.plan || 'صيانة'}</span>
+                            <p class="text-[11px] text-slate-500 mt-0.5">العنوان: زون ${o.address?.zone} | الهاتف: ${o.phone || '---'} | الموظف: ${o.assignedEmp || 'غير محدد'}</p>
                         </div>
+                        <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-black text-[10px]">مكتمل ✅</span>
                     </div>
                 `;
+            });
+        };
+
+        window.exportOrdersToExcel = function() {
+            const orders = window.allOrders || [];
+            let csvContent = "\uFEFFالشركة,الباقة,الهاتف,العنوان,المبلغ,الموظف المسؤول,الحالة\n";
+            orders.forEach(o => {
+                const addressStr = `زون ${o.address?.zone || ''} ش ${o.address?.street || ''}`;
+                csvContent += `"${o.company}","${o.plan || 'صيانة'}","${o.phone || ''}","${addressStr}","${o.totalPrice || 0}","${o.assignedEmp || 'غير محدد'}","${o.status}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `تقرير_الخدمات_الميدانية_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("تم تصدير تقرير إكسل بنجاح 📊", "success");
+        };
+
+        window.startVoiceRecognition = function(targetInputId) {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showToast("متصفحك لا يدعم الإملاء الصوتي المباشر", "error");
+                return;
             }
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ar-IQ';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
 
-            let notesListHTML = '';
-            if (order.notesList && order.notesList.length > 0) {
-                order.notesList.forEach(n => {
-                    notesListHTML += `
-                        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1">
-                            <div class="flex justify-between items-center text-[11px] font-bold text-blue-800 border-b border-slate-200 pb-1.5">
-                                <span><i class="fa-solid fa-user-pen ml-1"></i> ${n.sender}</span>
-                                <span class="text-slate-400 font-mono text-[10px]"><i class="fa-regular fa-clock ml-1"></i> ${n.time}</span>
-                            </div>
-                            <p class="text-xs text-slate-800 font-semibold pt-1">${n.text}</p>
-                        </div>
-                    `;
-                });
-            } else {
-                notesListHTML = `<p class="text-xs text-slate-400 text-center py-6">لا توجد ملاحظات مسجلة حتى الآن.</p>`;
+            showToast("جارِ الاستماع... تحدث الآن 🎤", "success");
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                const inputField = document.getElementById(targetInputId);
+                if (inputField) {
+                    inputField.value = inputField.value ? inputField.value + " " + speechResult : speechResult;
+                }
+                showToast("تم تحويل الصوت إلى نص بنجاح ✨", "success");
+            };
+
+            recognition.onerror = function() {
+                showToast("لم يتم التقاط الصوت بوضوح", "error");
+            };
+        };
+
+        window.generateReport = function() {
+            const container = document.getElementById('reportResultContainer');
+            if(!container) return;
+            container.innerHTML = '';
+            (window.allOrders || []).forEach(o => {
+                container.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="py-2.5 px-3 font-bold text-slate-800">${o.company}</td>
+                        <td class="py-2.5 px-3 text-slate-600">${o.plan || 'صيانة'}</td>
+                        <td class="py-2.5 px-3 font-mono">${o.phone || '---'}</td>
+                        <td class="py-2.5 px-3 font-black">${(o.totalPrice || 0).toLocaleString()} د.ع</td>
+                        <td class="py-2.5 px-3">${o.assignedEmp || 'غير محدد'}</td>
+                        <td class="py-2.5 px-3">${o.status === 'completed' ? 'مكتمل ✅' : 'نشط ⏳'}</td>
+                    </tr>
+                `;
+            });
+        };
+
+        // عند الضغط على استلام وتنفيذ، يُسجل اسم الموظف تلقائياً
+        window.updateOrderStatus = async function(orderId, newStatus, currentEmp) {
+            try {
+                const ref = doc(db, "orders", orderId);
+                const currentUserEmail = localStorage.getItem('userEmail') || 'موظف';
+                const empName = currentUserEmail.split('@')[0];
+
+                const updateObj = { status: newStatus };
+                if (!currentEmp || currentEmp === 'undefined') {
+                    updateObj.assignedEmp = empName;
+                }
+
+                await updateDoc(ref, updateObj);
+                showToast(newStatus === 'completed' ? "تم إكمال الطلب بنجاح ✅" : "تم استلام الطلب وتثبيت اسمك ⏳", "completed");
+                loadOrders(localStorage.getItem('userRole') || 'employee');
+            } catch (e) {
+                showToast("حدث خطأ في التحديث", "error");
             }
+        };
 
-            let phoneInfo = order.orderCategory !== 'maintenance' ? `<p class="flex items-center gap-1"><strong>رقم الهاتف:</strong> <span dir="ltr">${order.phone}</span></p>` : '';
-
+        window.openTicketDetailsModal = function(id) {
+            const order = (window.allOrders || []).find(o => o.id === id);
+            if(!order) return;
+            document.getElementById('detailsModalContainer').classList.remove('hidden');
             document.getElementById('ticketDetailsContent').innerHTML = `
-                <div class="space-y-4">
-                    <div class="bg-slate-50 p-4 rounded-3xl border border-slate-200 space-y-2 text-xs text-slate-700">
-                        <div class="flex justify-between font-extrabold text-slate-900 text-sm">
-                            <span>الشركة: ${order.company}</span>
-                            <span>${order.orderCategory === 'maintenance' ? 'أمر صيانة 🛠️' : 'نصب جديد 🆕'}</span>
-                        </div>
-                        ${phoneInfo}
-                        <p><strong>العنوان:</strong> زون ${order.address?.zone || ''} - شارع ${order.address?.street || ''} - دار ${order.address?.house || ''}</p>
-                        <p class="text-slate-500 text-[11px]"><strong>تاريخ التسجيل:</strong> ${timeStr}</p>
-                        ${order.assignedEmp ? `<p class="text-blue-800 font-bold"><strong>الموظف المتابع حالياً:</strong> ${order.assignedEmp}</p>` : ''}
-                        ${prevEmpHTML}
-                    </div>
-
-                    ${imagesHTML}
-
-                    <div class="space-y-2.5 pt-2">
-                        <h5 class="font-bold text-slate-800 text-xs flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-blue-700"></i> سجل الملاحظات وأسباب التأجيل:</h5>
-                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            ${notesListHTML}
-                        </div>
-                    </div>
+                <div class="space-y-3 text-xs bg-slate-50 p-4 rounded-2xl">
+                    <p><strong>الشركة:</strong> ${order.company}</p>
+                    <p><strong>الباقة:</strong> ${order.plan}</p>
+                    <p><strong>الموظف المسؤول:</strong> ${order.assignedEmp || 'غير مستلم بعد'}</p>
+                    <p><strong>رقم الهاتف:</strong> <span dir="ltr" class="font-mono">${order.phone}</span></p>
+                    <p><strong>العنوان:</strong> زون ${order.address?.zone} - شارع ${order.address?.street} - دار ${order.address?.house}</p>
                 </div>
             `;
         };
 
-        window.closeTicketDetailsModal = function() {
-            document.getElementById('detailsModalContainer').classList.add('hidden');
+        window.closeTicketDetailsModal = () => document.getElementById('detailsModalContainer').classList.add('hidden');
+        window.openDeleteConfirmModal = (id) => { document.getElementById('confirmDeleteTargetId').value = id; document.getElementById('deleteConfirmModalContainer').classList.remove('hidden'); };
+        window.closeDeleteConfirmModal = () => document.getElementById('deleteConfirmModalContainer').classList.add('hidden');
+        window.confirmDeleteOrder = async () => {
+            const id = document.getElementById('confirmDeleteTargetId').value;
+            await deleteDoc(doc(db, "orders", id));
+            showToast("تم الحذف نهائياً", "error");
+            closeDeleteConfirmModal();
+            loadOrders('manager');
         };
-
-        window.openDeferModal = function(orderId, assignedEmp) {
-            document.getElementById('modalTargetOrderId').value = orderId;
-            document.getElementById('modalAssignedEmp').value = assignedEmp;
-            document.getElementById('deferReasonInput').value = "عدم تواجد الزبون في الدار / يتطلب زيارة في وقت آخر";
-            document.getElementById('actionModalContainer').classList.remove('hidden');
-            document.getElementById('modalTitleHeader').innerText = "تأجيل الطلب مع توثيق السبب ⚠️";
-        };
-
-        window.openNoteModal = function(orderId) {
-            document.getElementById('modalTargetOrderId').value = orderId;
-            document.getElementById('modalAssignedEmp').value = "";
-            document.getElementById('deferReasonInput').value = "";
-            document.getElementById('actionModalContainer').classList.remove('hidden');
-            document.getElementById('modalTitleHeader').innerText = "تسجيل ملاحظة ميدانية جديدة 📝";
-        };
-
-        window.closeActionModal = function() {
-            document.getElementById('actionModalContainer').classList.add('hidden');
-        };
-
-        window.saveActionModalData = async function() {
-            const orderId = document.getElementById('modalTargetOrderId').value;
-            const currentAssignedEmp = document.getElementById('modalAssignedEmp').value;
-            const reason = document.getElementById('deferReasonInput').value.trim();
-
-            if (!reason) {
-                showToast("يرجى كتابة الملاحظة أو سبب التأجيل", "error");
-                return;
-            }
-
-            try {
-                const orderRef = doc(db, "orders", orderId);
-                const currentUserEmail = localStorage.getItem('userEmail') || 'موظف';
-                const empName = currentUserEmail.split('@')[0];
-
-                const docSnap = await getDoc(orderRef);
-                if (!docSnap.exists()) return;
-
-                const data = docSnap.data();
-                let notesList = data.notesList || [];
-                let prevList = data.previousEmployees || [];
-
-                const currentTimeStr = new Date().toLocaleString('ar-IQ');
-
-                if (currentAssignedEmp !== "") {
-                    if (currentAssignedEmp && !prevList.includes(currentAssignedEmp) && currentAssignedEmp !== 'undefined') {
-                        prevList.push(currentAssignedEmp);
-                    }
-
-                    notesList.unshift({
-                        sender: `تأجيل بواسطة الموظف (${empName})`,
-                        text: reason,
-                        time: currentTimeStr
-                    });
-
-                    await updateDoc(orderRef, {
-                        status: 'not_found',
-                        notesList: notesList,
-                        assignedEmp: empName,
-                        previousEmployees: prevList
-                    });
-                    showToast("تم تسجيل التأجيل بنجاح", "success");
-                } else {
-                    notesList.unshift({
-                        sender: `ملاحظة بواسطة (${empName})`,
-                        text: reason,
-                        time: currentTimeStr
-                    });
-
-                    await updateDoc(orderRef, { notesList: notesList });
-                    showToast("تم إدراج الملاحظة بنجاح", "success");
-                }
-
-                closeActionModal();
-                loadOrders(localStorage.getItem('userRole') || 'employee');
-            } catch (error) {
-                showToast("حدث خطأ أثناء حفظ البيانات", "error");
-            }
-        };
-
-        window.updateOrderStatus = async function(orderId, newStatus, currentAssignedEmp) {
-            try {
-                const orderRef = doc(db, "orders", orderId);
-                const currentUserEmail = localStorage.getItem('userEmail') || 'موظف';
-                const newEmpName = currentUserEmail.split('@')[0];
-                
-                const updateData = { status: newStatus };
-                
-                if (newStatus === 'in_progress' || newStatus === 'completed' || newStatus === 'cancelled') {
-                    if (currentAssignedEmp && currentAssignedEmp !== newEmpName && currentAssignedEmp !== 'undefined') {
-                        const docSnap = await getDoc(orderRef);
-                        if (docSnap.exists()) {
-                            let prevList = docSnap.data().previousEmployees || [];
-                            if (!prevList.includes(currentAssignedEmp)) {
-                                prevList.push(currentAssignedEmp);
-                            }
-                            updateData.previousEmployees = prevList;
-                        }
-                    }
-                    updateData.assignedEmp = newEmpName;
-                }
-
-                await updateDoc(orderRef, updateData);
-                
-                if (newStatus === 'completed') {
-                    showToast("تم إكمال الطلب ونقله لأرشيف الطلبات المكتملة ✅", "completed");
-                } else if (newStatus === 'cancelled') {
-                    showToast("تم إلغاء الأوردر بنجاح ❌", "error");
-                } else {
-                    showToast("تم تحديث حالة الطلب بنجاح", "success");
-                }
-
-                loadOrders(localStorage.getItem('userRole') || 'employee');
-            } catch (error) {
-                showToast("حدث خطأ أثناء التحديث", "error");
-            }
-        };
-
-        window.updatePaymentStatus = async function(orderId, newPaymentStatus) {
-            try {
-                const orderRef = doc(db, "orders", orderId);
-                await updateDoc(orderRef, { paymentStatus: newPaymentStatus });
-                showToast("تم تحديث حالة الدفع", "success");
-                loadOrders('staff');
-            } catch (error) {
-                showToast("حدث خطأ أثناء التحديث", "error");
-            }
+        window.openDeferModal = (id) => { document.getElementById('modalTargetOrderId').value = id; document.getElementById('actionModalContainer').classList.remove('hidden'); };
+        window.openNoteModal = (id) => { document.getElementById('modalTargetOrderId').value = id; document.getElementById('actionModalContainer').classList.remove('hidden'); };
+        window.closeActionModal = () => document.getElementById('actionModalContainer').classList.add('hidden');
+        window.saveActionModalData = async () => {
+            const id = document.getElementById('modalTargetOrderId').value;
+            const text = document.getElementById('deferReasonInput').value.trim();
+            if(!text) return;
+            const ref = doc(db, "orders", id);
+            const docSnap = await getDoc(ref);
+            let notes = docSnap.data().notesList || [];
+            notes.unshift({ sender: "ملاحظة موظف", text, time: new Date().toLocaleString('ar-IQ') });
+            await updateDoc(ref, { notesList: notes, status: 'not_found' });
+            showToast("تم حفظ الملاحظة بنجاح", "success");
+            closeActionModal();
+            loadOrders(localStorage.getItem('userRole') || 'employee');
         };
 
         window.openImageModal = function(imgSrc, title) {
@@ -962,615 +823,471 @@
             document.getElementById('downloadImageBtn').href = imgSrc;
             document.getElementById('imageModal').classList.remove('hidden');
         };
-
         window.closeImageModal = function() {
             document.getElementById('imageModal').classList.add('hidden');
         };
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen selection:bg-blue-700 selection:text-white">
+<body class="bg-slate-100 antialiased min-h-screen">
 
     <!-- Toast Notification -->
-    <div id="customToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-xs transition-all duration-300 translate-y-16 opacity-0 pointer-events-none border border-slate-700">
+    <div id="customToast" class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl font-bold text-xs transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
         <span id="toastMessage">تمت العملية بنجاح!</span>
     </div>
 
-    <!-- 1. واجهة تسجيل الدخول الرسمية الفاتحة -->
-    <div id="view-login" class="flex items-center justify-center min-h-screen px-4 py-12 bg-gradient-to-b from-slate-100 via-slate-50 to-white">
-        <div class="w-full max-w-md bg-white border border-slate-200/90 shadow-2xl shadow-slate-200/60 rounded-3xl p-8 space-y-6">
-            
+    <!-- 1. واجهة تسجيل الدخول -->
+    <div id="view-login" class="flex items-center justify-center min-h-screen px-4 bg-gradient-to-tr from-slate-200 to-blue-50">
+        <div class="w-full max-w-md bg-white border border-slate-200 shadow-2xl rounded-3xl p-8 space-y-6">
             <div class="text-center space-y-3">
-                <div class="w-16 h-16 bg-blue-700 text-white rounded-3xl flex items-center justify-center mx-auto text-xl font-black border border-blue-800 shadow-md tracking-wider">
-                    IT
+                <!-- لوكو IT هندسي وتقني -->
+                <div class="w-20 h-20 bg-blue-600 text-white rounded-3xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-blue-600/30 relative overflow-hidden border-2 border-blue-400">
+                    <i class="fa-solid fa-network-wired absolute opacity-20 text-5xl"></i>
+                    <i class="fa-solid fa-server z-10"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-black text-slate-900 tracking-tight">قسم تكنولوجيا المعلومات</h1>
-                    <p class="text-xs font-extrabold text-blue-800 mt-0.5">بوابة الكاظمية</p>
+                    <h1 class="text-base font-black text-slate-900">قسم تكنولوجيا المعلومات</h1>
+                    <p class="text-[11px] font-bold text-blue-600 mt-0.5">بوابة الكاظمية الرقمية</p>
                 </div>
-                <div class="h-0.5 w-12 bg-blue-700 mx-auto rounded-full my-2"></div>
-                <p class="text-[11px] text-slate-400 font-semibold">منظومة إدارة البنيات والخدمات الميدانية</p>
             </div>
 
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+            <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع الصلاحية / الشفت:</label>
-                    <select id="loginRole" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-700 transition">
-                        <option value="employee">كادر الموظفين / البوابة الميدانية</option>
-                        <option value="manager">المنجر / لوحة التحكّم والتحليل</option>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الصلاحية:</label>
+                    <select id="loginRole" class="w-full ios-input">
+                        <option value="employee">كادر الموظفين والميدان</option>
+                        <option value="manager">المنجَر (لوحة الإدارة الكاملة)</option>
                     </select>
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">البريد الإلكتروني الرسمي:</label>
-                    <input type="email" id="loginEmail" required placeholder="tech@alkadhimiya.iq" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700 transition">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">البريد الإلكتروني:</label>
+                    <input type="email" id="loginEmail" required placeholder="it@alkadhimiya.iq" class="w-full ios-input">
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">كلمة المرور:</label>
-                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700 transition">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور:</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full ios-input">
                 </div>
-
-                <button type="submit" id="loginBtn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-blue-700/20 flex items-center justify-center gap-2 text-xs mt-2">
+                <button type="submit" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl transition shadow-lg shadow-blue-600/20 text-xs flex items-center justify-center gap-2">
                     تسجيل الدخول الآمن <i class="fa-solid fa-arrow-left text-xs"></i>
                 </button>
             </form>
-            
-            <div class="text-center pt-2">
-                <p class="text-[10px] text-slate-400 font-semibold">قسم تكنولوجيا المعلومات / بوابة الكاظمية © جميع الحقوق محفوظة</p>
-            </div>
         </div>
     </div>
 
-    <!-- 2. واجهة الموظفين الفاتحة -->
-    <div id="view-staff" class="hidden bg-slate-50 min-h-screen">
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-            <div class="container mx-auto px-4 py-3.5 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 bg-blue-700 text-white rounded-2xl flex items-center justify-center text-sm font-black border border-blue-800 shadow-sm tracking-wider">IT</span>
-                    <div>
-                        <h2 class="font-extrabold text-slate-900 text-sm">قسم تكنولوجيا المعلومات / بوابة الكاظمية</h2>
-                        <p class="text-[11px] font-bold text-slate-500">الموظف: <span id="staff-name" class="font-bold text-blue-700">...</span></p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="loadOrders('staff')" title="تحديث البيانات" class="bg-slate-100 hover:bg-slate-200 text-blue-700 p-2.5 rounded-xl text-xs font-bold transition border border-slate-200 flex items-center gap-1">
-                        <i class="fa-solid fa-rotate text-sm"></i>
-                    </button>
-                    <button onclick="handleLogout()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200">
-                        <i class="fa-solid fa-right-from-bracket"></i> خروج
-                    </button>
+    <!-- 2. واجهة الموظفين -->
+    <div id="view-staff" class="hidden min-h-screen flex flex-col">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-3.5 flex justify-between items-center shadow-2xs">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center text-sm font-black shadow-md"><i class="fa-solid fa-server"></i></div>
+                <div>
+                    <h2 class="font-black text-slate-900 text-xs">قسم تكنولوجيا المعلومات / بوابة الكاظمية</h2>
+                    <p class="text-[10px] text-slate-500 font-bold">الموظف: <span id="staff-name" class="text-blue-600">...</span></p>
                 </div>
             </div>
+            <button onclick="handleLogout()" class="bg-rose-50 text-rose-600 px-3 py-2 rounded-xl text-xs font-bold border border-rose-100">خروج</button>
         </header>
 
-        <main class="container mx-auto px-4 py-6 space-y-4 max-w-4xl">
-            <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-3">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 text-xs">تصفية وبحث المهام والأوامر النشطة</h3>
-                    <span class="text-[10px] text-blue-700 font-mono font-extrabold">مزامنة حية ⚡</span>
+        <main class="app-container mx-auto px-4 py-6 flex-1 w-full space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="kanban-col p-4 space-y-3">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span class="font-black text-xs text-sky-700">🆕 طلبات جديدة</span>
+                    </div>
+                    <div id="staff-col-new" class="space-y-3"></div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <select id="sFilterCategory" onchange="renderOrders('staff')" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-2xl p-3 font-bold focus:outline-none">
-                        <option value="ALL">🔍 الكل (نصب + صيانة)</option>
-                        <option value="installation">🆕 طلبات النصب</option>
-                        <option value="maintenance">🛠️ أوامر الصيانة</option>
-                    </select>
-                    <select id="sFilterStatus" onchange="renderOrders('staff')" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-2xl p-3 font-bold focus:outline-none">
-                        <option value="ALL">جميع الحالات النشطة</option>
-                        <option value="new">جديد 🆕</option>
-                        <option value="in_progress">قيد التنفيذ ⏳</option>
-                        <option value="not_found">مؤجل ⚠️</option>
-                        <option value="cancelled">ملغي ❌</option>
-                    </select>
+                <div class="kanban-col p-4 space-y-3">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span class="font-black text-xs text-amber-700">⏳ قيد التنفيذ</span>
+                    </div>
+                    <div id="staff-col-progress" class="space-y-3"></div>
+                </div>
+                <div class="kanban-col p-4 space-y-3">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span class="font-black text-xs text-orange-700">⚠️ مؤجلة / بانتظار الزبون</span>
+                    </div>
+                    <div id="staff-col-defer" class="space-y-3"></div>
                 </div>
             </div>
-
-            <div id="staff-all-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </main>
     </div>
 
-    <!-- 3. لوحة المنجَر المنتظمة -->
-    <div id="view-manager" class="hidden min-h-screen flex flex-col md:flex-row bg-slate-50 relative">
-        
-        <!-- هيدر الموبايل العلوي -->
-        <header class="md:hidden bg-white border-b border-slate-200 p-4 sticky top-0 z-30 flex justify-between items-center shadow-xs">
+    <!-- 3. لوحة تحكم المنجَر -->
+    <div id="view-manager" class="hidden min-h-screen flex flex-col">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-3 flex justify-between items-center shadow-2xs">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="w-10 h-10 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center text-lg active:scale-95 transition border border-slate-200">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
-                <div class="flex items-center gap-2">
-                    <span class="w-8 h-8 bg-blue-700 text-white rounded-xl flex items-center justify-center text-xs font-black shadow-xs">IT</span>
-                    <div>
-                        <h2 class="font-extrabold text-slate-900 text-xs">تكنولوجيا المعلومات</h2>
-                        <p class="text-[9px] font-bold text-blue-700">بوابة الكاظمية</p>
-                    </div>
+                <div class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center text-sm font-black shadow-md"><i class="fa-solid fa-server"></i></div>
+                <div>
+                    <h2 class="font-black text-slate-900 text-xs">قسم تكنولوجيا المعلومات / بوابة الكاظمية</h2>
+                    <p class="text-[10px] text-blue-600 font-bold">المنجَر: <span id="manager-name">...</span></p>
                 </div>
             </div>
             
-            <button onclick="loadOrders('manager')" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
-                <i class="fa-solid fa-rotate"></i> تحديث
-            </button>
+            <nav class="hidden md:flex items-center gap-1.5">
+                <button onclick="switchManagerTab('kanban-orders')" id="nav-kanban-orders" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md shadow-blue-600/20">لوحة الكانبان</button>
+                <button onclick="switchManagerTab('completed-orders')" id="nav-completed-orders" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">الأرشيف</button>
+                <button onclick="switchManagerTab('reports')" id="nav-reports" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">التقارير و Excel</button>
+                <button onclick="switchManagerTab('new-install')" id="nav-new-install" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">نصب جديد</button>
+                <button onclick="switchManagerTab('new-maintenance')" id="nav-new-maintenance" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">صيانة</button>
+                <button onclick="switchManagerTab('settings')" id="nav-settings" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">الإعدادات</button>
+            </nav>
+
+            <button onclick="handleLogout()" class="bg-rose-50 text-rose-600 p-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-right-from-bracket"></i></button>
         </header>
 
-        <div id="sidebarOverlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden"></div>
+        <!-- شريط التنقل السفلي للهواتف الذكية -->
+        <div class="mobile-bottom-nav md:hidden">
+            <button onclick="switchManagerTab('kanban-orders')" id="mob-nav-kanban-orders" class="flex flex-col items-center text-blue-600 text-[10px] font-black py-1">
+                <i class="fa-solid fa-columns text-base mb-0.5"><span>اللوحة</span></i>
+            </button>
+            <button onclick="switchManagerTab('completed-orders')" id="mob-nav-completed-orders" class="flex flex-col items-center text-slate-400 text-[10px] font-bold py-1">
+                <i class="fa-solid fa-box-archive text-base mb-0.5"><span>الأرشيف</span></i>
+            </button>
+            <button onclick="switchManagerTab('reports')" id="mob-nav-reports" class="flex flex-col items-center text-slate-400 text-[10px] font-bold py-1">
+                <i class="fa-solid fa-file-excel text-base mb-0.5"><span>التقارير</span></i>
+            </button>
+            <button onclick="switchManagerTab('new-install')" id="mob-nav-new-install" class="flex flex-col items-center text-slate-400 text-[10px] font-bold py-1">
+                <i class="fa-solid fa-plus-circle text-base mb-0.5"><span>نصب</span></i>
+            </button>
+            <button onclick="switchManagerTab('new-maintenance')" id="mob-nav-new-maintenance" class="flex flex-col items-center text-slate-400 text-[10px] font-bold py-1">
+                <i class="fa-solid fa-wrench text-base mb-0.5"><span>صيانة</span></i>
+            </button>
+            <button onclick="switchManagerTab('settings')" id="mob-nav-settings" class="flex flex-col items-center text-slate-400 text-[10px] font-bold py-1">
+                <i class="fa-solid fa-sliders text-base mb-0.5"><span>إعدادات</span></i>
+            </button>
+        </div>
 
-        <!-- القائمة الجانبية (Sidebar / Slidebar) -->
-        <aside id="managerSidebar" class="fixed md:static top-0 right-0 h-full w-72 bg-white border-l border-slate-200 flex flex-col justify-between p-5 z-50 transform translate-x-full md:translate-x-0 transition-transform duration-300 shadow-xl md:shadow-xs">
-            <div class="space-y-6">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-blue-700 text-white rounded-2xl flex items-center justify-center text-base font-black shadow-md shadow-blue-700/20 tracking-wider">
-                            IT
+        <main class="app-container mx-auto px-4 py-6 space-y-6 flex-1 w-full">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="glass-card p-4 flex justify-between items-center bg-white">
+                    <div><p class="text-[10px] text-slate-400 font-bold">النشطة</p><h4 id="statActiveOrders" class="text-lg font-black text-slate-900">0</h4></div>
+                    <i class="fa-solid fa-layer-group text-blue-600 text-lg"></i>
+                </div>
+                <div class="glass-card p-4 flex justify-between items-center bg-white">
+                    <div><p class="text-[10px] text-slate-400 font-bold">طلبات النصب</p><h4 id="statInstallOrders" class="text-lg font-black text-blue-600">0</h4></div>
+                    <i class="fa-solid fa-plus text-blue-600 text-lg"></i>
+                </div>
+                <div class="glass-card p-4 flex justify-between items-center bg-white">
+                    <div><p class="text-[10px] text-slate-400 font-bold">أوامر الصيانة</p><h4 id="statMaintOrders" class="text-lg font-black text-amber-500">0</h4></div>
+                    <i class="fa-solid fa-wrench text-amber-500 text-lg"></i>
+                </div>
+                <div class="glass-card p-4 flex justify-between items-center bg-white">
+                    <div><p class="text-[10px] text-slate-400 font-bold">المكتملة</p><h4 id="statCompletedOrders" class="text-lg font-black text-emerald-600">0</h4></div>
+                    <i class="fa-solid fa-box-archive text-emerald-600 text-lg"></i>
+                </div>
+            </div>
+
+            <!-- تبويب لوحة الكانبان -->
+            <div id="tab-kanban-orders" class="space-y-4">
+                <div class="glass-card p-4 space-y-3 bg-white">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-black text-slate-900 text-xs">لوحة متابعة الطلبات الحية</h3>
+                        <button onclick="loadOrders('manager')" class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl text-xs font-bold">تحديث البيانات 🔄</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 border-t border-slate-100">
+                        <div>
+                            <select id="filterZoneSelect" onchange="renderKanbanBoard()" class="ios-input py-2 text-xs w-full">
+                                <option value="ALL">جميع الزونات / المحلات</option>
+                            </select>
                         </div>
                         <div>
-                            <h2 class="font-extrabold text-slate-900 text-xs">تكنولوجيا المعلومات</h2>
-                            <p class="text-[11px] font-black text-blue-700">بوابة الكاظمية</p>
-                            <span class="text-[10px] text-slate-400 font-bold block mt-0.5">المنجر: <span id="manager-name">...</span></span>
+                            <select id="filterCompanySelect" onchange="renderKanbanBoard()" class="ios-input py-2 text-xs w-full">
+                                <option value="ALL">جميع الشركات (الوطني + سوبرسيل)</option>
+                                <option value="المشروع الوطني">المشروع الوطني</option>
+                                <option value="سوبرسيل">سوبرسيل</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="filterSearchInput" oninput="renderKanbanBoard()" placeholder="بحث سريع برقم الهاتف أو الزون..." class="ios-input py-2 text-xs w-full">
                         </div>
                     </div>
-                    <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-rose-600 text-lg p-1"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <nav class="space-y-2">
-                    <button onclick="switchManagerTab('all-orders')" id="nav-all-orders" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold bg-blue-700 text-white shadow-md shadow-blue-700/20 transition">
-                        <i class="fa-solid fa-layer-group w-4"></i> كافة الطلبات النشطة
-                    </button>
-                    <button onclick="switchManagerTab('completed-orders')" id="nav-completed-orders" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
-                        <i class="fa-solid fa-box-archive w-4 text-emerald-600"></i> أرشيف الطلبات المكتملة 📁
-                    </button>
-                    <button onclick="switchManagerTab('new-install')" id="nav-new-install" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
-                        <i class="fa-solid fa-file-circle-plus w-4"></i> طلب نصب واشتراك جديد
-                    </button>
-                    <button onclick="switchManagerTab('new-maintenance')" id="nav-new-maintenance" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
-                        <i class="fa-solid fa-wrench w-4 text-amber-500"></i> تسجيل أمر صيانة ⚠️
-                    </button>
-                    <button onclick="switchManagerTab('settings')" id="nav-settings" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
-                        <i class="fa-solid fa-sliders w-4"></i> إدارة الباقات والأجهزة ⚙️
-                    </button>
-                </nav>
-            </div>
-
-            <div class="pt-4 border-t border-slate-100 space-y-2">
-                <button onclick="loadOrders('manager')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-rotate text-blue-700"></i> تحديث البيانات الحية
-                </button>
-                <button onclick="handleLogout()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
-                </button>
-            </div>
-        </aside>
-
-        <!-- المحتوى الرئيسي للمنجَر -->
-        <main class="flex-1 p-5 md:p-8 space-y-6 overflow-y-auto">
-            
-            <!-- تبويب الطلبات النشطة -->
-            <div id="tab-all-orders" class="space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
-                    <div>
-                        <h3 class="font-extrabold text-slate-900 text-base">سجل الطلبات والأوامر النشطة</h3>
-                        <p class="text-xs text-slate-500 font-semibold mt-0.5">قسم تكنولوجيا المعلومات / بوابة الكاظمية</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="kanban-col p-4 space-y-3">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                            <span class="font-black text-xs text-sky-700">🆕 طلبات جديدة</span>
+                        </div>
+                        <div id="kanban-col-new" class="space-y-3"></div>
                     </div>
-                    
-                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                        <button onclick="loadOrders('manager')" class="hidden md:flex bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-4 py-3 rounded-2xl text-xs font-bold transition items-center gap-1.5">
-                            <i class="fa-solid fa-rotate"></i> تحديث
+                    <div class="kanban-col p-4 space-y-3">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                            <span class="font-black text-xs text-amber-700">⏳ قيد التنفيذ والمتابعة</span>
+                        </div>
+                        <div id="kanban-col-progress" class="space-y-3"></div>
+                    </div>
+                    <div class="kanban-col p-4 space-y-3">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                            <span class="font-black text-xs text-orange-700">⚠️ مؤجلة أو غير متواجد</span>
+                        </div>
+                        <div id="kanban-col-defer" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تبويب الأرشيف -->
+            <div id="tab-completed-orders" class="hidden space-y-4">
+                <div class="glass-card p-4 flex flex-col sm:flex-row justify-between items-center gap-3 bg-white">
+                    <h3 class="font-black text-slate-900 text-xs">أرشيف الطلبات المكتملة</h3>
+                    <input type="text" id="searchCompletedInput" oninput="renderCompletedOrders()" placeholder="بحث برقم الهاتف أو الزون..." class="ios-input text-xs w-full sm:w-64">
+                </div>
+                <div id="manager-completed-orders-list" class="space-y-3"></div>
+            </div>
+
+            <!-- تبويب التقارير و Excel -->
+            <div id="tab-reports" class="hidden space-y-4 max-w-4xl mx-auto">
+                <div class="glass-card p-6 space-y-4 bg-white">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <h3 class="font-black text-slate-900 text-sm">التقارير المالية والتشغيلية وتصدير Excel</h3>
+                        <button onclick="exportOrdersToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2 rounded-xl text-xs shadow-md shadow-emerald-600/20 flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel"></i> تصدير البيانات إلى Excel (CSV)
                         </button>
-                        <select id="mFilterCategory" onchange="renderOrders('manager')" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-2xl px-4 py-3 font-bold focus:outline-none">
-                            <option value="ALL">🔍 الكل (نصب + صيانة)</option>
-                            <option value="installation">🆕 طلبات النصب</option>
-                            <option value="maintenance">🛠️ أوامر الصيانة</option>
-                        </select>
-                        <select id="mFilterStatus" onchange="renderOrders('manager')" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-2xl px-4 py-3 font-bold focus:outline-none">
-                            <option value="ALL">جميع الحالات النشطة</option>
-                            <option value="new">جديد 🆕</option>
-                            <option value="in_progress">قيد التنفيذ ⏳</option>
-                            <option value="not_found">مؤجل ⚠️</option>
-                            <option value="cancelled">ملغي ❌</option>
-                        </select>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                        <table class="w-full text-right text-xs">
+                            <thead class="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
+                                <tr>
+                                    <th class="py-3 px-3">الشركة</th>
+                                    <th class="py-3 px-3">الباقة</th>
+                                    <th class="py-3 px-3">الهاتف</th>
+                                    <th class="py-3 px-3">المبلغ</th>
+                                    <th class="py-3 px-3">الموظف</th>
+                                    <th class="py-3 px-3">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportResultContainer"></tbody>
+                        </table>
                     </div>
                 </div>
-
-                <div id="manager-all-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
             </div>
 
-            <!-- تبويب الطلبات المكتملة والأرشيف -->
-            <div id="tab-completed-orders" class="hidden space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
-                    <div>
-                        <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                            <i class="fa-solid fa-box-archive text-emerald-600"></i> أرشيف الطلبات والأوامر المكتملة
-                        </h3>
-                        <p class="text-xs text-slate-500 font-semibold mt-0.5">البحث المباشر الدائم في أرشيف الزبائن والمنفذين</p>
-                    </div>
-                    <div class="w-full sm:w-72">
-                        <div class="relative">
-                            <input type="text" id="searchCompletedInput" oninput="renderCompletedOrders()" placeholder="ابحث برقم الهاتف، الزون، الشارع، الدار..." class="w-full pl-3 pr-9 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600">
-                            <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="manager-completed-orders-list" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
-            </div>
-
-            <!-- تبويب طلب نصب جديد -->
-            <div id="tab-new-install" class="hidden space-y-6 max-w-3xl mx-auto">
-                <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 md:p-8 space-y-6">
-                    <div class="border-b border-slate-100 pb-4">
-                        <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-file-circle-plus text-blue-700"></i> استمارة طلب نصب واشتراك جديد
-                        </h3>
-                        <p class="text-xs text-slate-400 font-semibold mt-1">قسم تكنولوجيا المعلومات / بوابة الكاظمية</p>
-                    </div>
-
-                    <form id="installOrderForm" onsubmit="submitInstallOrder(event)" class="space-y-5">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- تبويب نصب جديد (مع خيارات أجهزة موسعة تصل إلى 10) -->
+            <div id="tab-new-install" class="hidden space-y-4 max-w-2xl mx-auto">
+                <div class="glass-card p-6 space-y-4 bg-white">
+                    <h3 class="font-black text-slate-900 text-sm border-b border-slate-100 pb-3">استمارة طلب نصب واشتراك جديد</h3>
+                    <form id="installOrderForm" onsubmit="submitInstallOrder(event)" class="space-y-3 text-xs">
+                        <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-2">الشركة المزودة:</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <label class="border border-slate-200 bg-slate-50 rounded-2xl p-3 flex items-center justify-center cursor-pointer hover:border-blue-700 transition has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                                        <input type="radio" name="installCompany" value="المشروع الوطني" checked onchange="handleCompanyChange('المشروع الوطني')" class="ml-2 accent-blue-700">
-                                        <span class="font-bold text-xs text-slate-800">المشروع الوطني</span>
-                                    </label>
-                                    <label class="border border-slate-200 bg-slate-50 rounded-2xl p-3 flex items-center justify-center cursor-pointer hover:border-blue-700 transition has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
-                                        <input type="radio" name="installCompany" value="سوبرسيل" onchange="handleCompanyChange('سوبرسيل')" class="ml-2 accent-blue-700">
-                                        <span class="font-bold text-xs text-slate-800">سوبرسيل</span>
-                                    </label>
+                                <label class="block font-bold mb-1">الشركة المزودة:</label>
+                                <div class="flex gap-2">
+                                    <label class="flex-center p-2 bg-slate-50 rounded-xl border cursor-pointer"><input type="radio" name="installCompany" value="المشروع الوطني" checked onchange="handleCompanyChange('المشروع الوطني')"> الوطني</label>
+                                    <label class="flex-center p-2 bg-slate-50 rounded-xl border cursor-pointer"><input type="radio" name="installCompany" value="سوبرسيل" onchange="handleCompanyChange('سوبرسيل')"> سوبرسيل</label>
                                 </div>
                             </div>
-
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-2">نوع الباقة السعرية:</label>
-                                <select id="planType" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none">
+                                <label class="block font-bold mb-1">الباقة:</label>
+                                <select id="planType" class="w-full ios-input"></select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold mb-1">رقم الموبايل:</label>
+                                <input type="tel" id="installPhone" required placeholder="07700000000" class="w-full ios-input">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">التسديد:</label>
+                                <select id="installPayment" class="w-full ios-input">
+                                    <option value="pending">آجل عند الزبون ⏳</option>
+                                    <option value="received">مستلم ✅</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl">
+                            <input type="text" id="installZone" required placeholder="زون 903" class="ios-input text-[11px] py-1.5">
+                            <input type="text" id="installStreet" required placeholder="شارع 14" class="ios-input text-[11px] py-1.5">
+                            <input type="text" id="installHouse" required placeholder="دار 12" class="ios-input text-[11px] py-1.5">
+                            <input type="text" id="installApartment" placeholder="شقة" class="ios-input text-[11px] py-1.5">
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">رقم الموبايل:</label>
-                                <input type="tel" id="installPhone" required placeholder="07700000000" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none">
+                                <label class="block font-bold mb-1">راوتر</label>
+                                <select id="installRouter" class="w-full ios-input">
+                                    <option value="0">0</option><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+                                </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">حالة الحساب / التسديد:</label>
-                                <select id="installPayment" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none">
-                                    <option value="pending">آجل / التسديد عند الزبون ⏳</option>
-                                    <option value="received">مستلم (تم دفعه للمنجَر) ✅</option>
+                                <label class="block font-bold mb-1">ONU</label>
+                                <select id="installOnu" class="w-full ios-input">
+                                    <option value="0">0</option><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">UPS</label>
+                                <select id="installUps" class="w-full ios-input">
+                                    <option value="0" selected>0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">الزون / المحلة:</label>
-                                <input type="text" id="installZone" required placeholder="زون 903" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">الشارع:</label>
-                                <input type="text" id="installStreet" required placeholder="شارع 14" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الدار:</label>
-                                <input type="text" id="installHouse" required placeholder="دار 12" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">الشقة:</label>
-                                <input type="text" id="installApartment" placeholder="شقة 4" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
+                        <div class="relative">
+                            <label class="block font-bold mb-1">ملاحظات (مع إمكانية التسجيل الصوتي 🎤):</label>
+                            <input type="text" id="installNotes" placeholder="اكتب أو انقر لتسجيل ملاحظة صوتية..." class="w-full ios-input pr-10">
+                            <button type="button" onclick="startVoiceRecognition('installNotes')" class="absolute left-3 top-8 text-blue-600 text-base" title="تحدث لإدخال النص"><i class="fa-solid fa-microphone"></i></button>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">راوتر:</label>
-                                <select id="installRouter" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
-                                    <option value="0">0 (بدون)</option>
-                                    <option value="1" selected>1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">ONU:</label>
-                                <select id="installOnu" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
-                                    <option value="0">0 (بدون)</option>
-                                    <option value="1" selected>1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">UPS:</label>
-                                <select id="installUps" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
-                                    <option value="0">0 (بدون)</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                </select>
-                            </div>
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <div><label class="block font-bold mb-1">البطاقة (أمام)</label><input type="file" id="frontImage" accept="image/*" class="w-full text-[11px]"></div>
+                            <div><label class="block font-bold mb-1">البطاقة (خلف)</label><input type="file" id="backImage" accept="image/*" class="w-full text-[11px]"></div>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات إضافية:</label>
-                            <input type="text" id="installNotes" placeholder="أية ملاحظات خاصة..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">صورة البطاقة (الوجه الأمامي) <span class="text-rose-600 font-bold">*</span>:</label>
-                                <input type="file" id="frontImage" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white cursor-pointer font-bold">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">صورة البطاقة (الوجه الخلفي) <span class="text-rose-600 font-bold">*</span>:</label>
-                                <input type="file" id="backImage" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white cursor-pointer font-bold">
-                            </div>
-                        </div>
-
-                        <button type="submit" id="submitInstallBtn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-blue-700/20 text-xs flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-paper-plane"></i> إرسال طلب النصب
-                        </button>
+                        <button type="submit" id="submitInstallBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl mt-2 text-xs shadow-md">إرسال طلب النصب</button>
                     </form>
                 </div>
             </div>
 
-            <!-- تبويب أمر صيانة جديد -->
-            <div id="tab-new-maintenance" class="hidden space-y-6 max-w-2xl mx-auto">
-                <div class="bg-white rounded-3xl border border-amber-300/80 shadow-xs p-6 md:p-8 space-y-6">
-                    <div class="border-b border-slate-100 pb-4">
-                        <h3 class="text-lg font-black text-amber-900 flex items-center gap-2">
-                            <i class="fa-solid fa-wrench"></i> تسجيل أمر صيانة / عطل جديد
-                        </h3>
-                        <p class="text-xs text-slate-500 font-semibold mt-1">قسم تكنولوجيا المعلومات / بوابة الكاظمية</p>
-                    </div>
-
-                    <form id="maintOrderForm" onsubmit="submitMaintenanceOrder(event)" class="space-y-5">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-2">الشركة المزودة:</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <label class="border border-slate-200 bg-slate-50 rounded-2xl p-3 flex items-center justify-center cursor-pointer hover:border-amber-500 transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50">
-                                    <input type="radio" name="maintCompany" value="المشروع الوطني" checked class="ml-2 accent-amber-500">
-                                    <span class="font-bold text-xs text-slate-800">المشروع الوطني</span>
-                                </label>
-                                <label class="border border-slate-200 bg-slate-50 rounded-2xl p-3 flex items-center justify-center cursor-pointer hover:border-amber-500 transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50">
-                                    <input type="radio" name="maintCompany" value="سوبرسيل" class="ml-2 accent-amber-500">
-                                    <span class="font-bold text-xs text-slate-800">سوبرسيل</span>
-                                </label>
-                            </div>
+            <!-- تبويب صيانة -->
+            <div id="tab-new-maintenance" class="hidden space-y-4 max-w-xl mx-auto">
+                <div class="glass-card p-6 space-y-4 bg-white border-amber-200">
+                    <h3 class="font-black text-amber-900 text-sm border-b border-slate-100 pb-3">تسجيل أمر صيانة أو عطل</h3>
+                    <form id="maintOrderForm" onsubmit="submitMaintenanceOrder(event)" class="space-y-3 text-xs">
+                        <div class="grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl">
+                            <input type="text" id="maintZone" required placeholder="زون" class="ios-input text-[11px] py-1.5">
+                            <input type="text" id="maintStreet" required placeholder="شارع" class="ios-input text-[11px] py-1.5">
+                            <input type="text" id="maintHouse" required placeholder="دار" class="ios-input text-[11px] py-1.5">
+                            <input type="text" id="maintApartment" placeholder="شقة" class="ios-input text-[11px] py-1.5">
                         </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">الزون / المحلة:</label>
-                                <input type="text" id="maintZone" required placeholder="زون 903" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">الشارع:</label>
-                                <input type="text" id="maintStreet" required placeholder="شارع 14" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">رقم الدار:</label>
-                                <input type="text" id="maintHouse" required placeholder="دار 12" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">الشقة:</label>
-                                <input type="text" id="maintApartment" placeholder="شقة 4" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900">
-                            </div>
+                        <div class="relative">
+                            <label class="block font-bold mb-1">وصف المشكلة (أو تحدث صوتياً 🎤):</label>
+                            <textarea id="maintIssue" rows="3" required class="w-full ios-input p-3" placeholder="وصف العطل..."></textarea>
+                            <button type="button" onclick="startVoiceRecognition('maintIssue')" class="absolute left-3 bottom-3 text-amber-600 text-base"><i class="fa-solid fa-microphone"></i></button>
                         </div>
-
-                        <div>
-                            <label class="block text-xs font-extrabold text-amber-900 mb-1.5">وصف العطل أو المشكلة الميدانية:</label>
-                            <textarea id="maintIssue" required rows="3" class="w-full p-3.5 bg-amber-50/30 border border-amber-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-amber-500" placeholder="مثال: انقطاع بالخدمة، ضوء الراوتر أحمر، وجود عائق أو قطع في المسار..."></textarea>
-                        </div>
-
-                        <button type="submit" id="submitMaintBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3.5 rounded-2xl transition shadow-lg shadow-amber-500/20 text-xs flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-paper-plane"></i> إرسال أمر الصيانة للموظفين
-                        </button>
+                        <button type="submit" id="submitMaintBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3 rounded-xl text-xs">إرسال أمر الصيانة</button>
                     </form>
                 </div>
             </div>
 
-            <!-- تبويب الإعدادات والتحكم بالأسعار -->
-            <div id="tab-settings" class="hidden space-y-6 max-w-4xl mx-auto">
-                <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 md:p-8 space-y-6">
-                    <div class="border-b border-slate-100 pb-4">
-                        <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-sliders text-blue-700"></i> التحكم في الباقات والأسعار المعتمدة
-                        </h3>
-                        <p class="text-xs text-slate-400 font-semibold mt-1">قسم تكنولوجيا المعلومات / بوابة الكاظمية</p>
-                    </div>
-
-                    <!-- إضافة باقة -->
-                    <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200 space-y-3">
-                        <h4 class="font-bold text-slate-900 text-xs flex items-center gap-1.5"><i class="fa-solid fa-plus-circle text-blue-700"></i> إضافة باقة جديدة:</h4>
-                        <form id="addPlanForm" onsubmit="addNewPlan(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-700 block mb-1">الشركة المزودة:</label>
-                                <select id="newPlanCompany" class="w-full p-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-800">
-                                    <option value="المشروع الوطني">المشروع الوطني</option>
-                                    <option value="سوبرسيل">سوبرسيل</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-700 block mb-1">عنوان الباقة:</label>
-                                <input type="text" id="newPlanName" required placeholder="35,000" class="w-full p-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-700 block mb-1">السعر (د.ع):</label>
-                                <input type="number" id="newPlanPrice" required placeholder="35000" class="w-full p-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-md shadow-blue-700/20">
-                                <i class="fa-solid fa-plus ml-1"></i> إضافة الباقة
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- جدول الباقات -->
-                    <div class="space-y-2">
-                        <h4 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-list-ul text-blue-700 ml-1"></i> الباقات المعتمدة حالياً (يمكنك تعديل السعر مباشرة داخل الخانة):</h4>
-                        <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
-                            <table class="w-full text-right border-collapse">
-                                <thead class="bg-slate-50 text-slate-700 text-[11px] font-bold border-b border-slate-200">
-                                    <tr>
-                                        <th class="py-3 px-4">عنوان الباقة</th>
-                                        <th class="py-3 px-4">الشركة</th>
-                                        <th class="py-3 px-4">السعر (د.ع)</th>
-                                        <th class="py-3 px-4 text-left">إجراء</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="plansTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <hr class="border-slate-100 my-4">
-
-                    <!-- إضافة جهاز -->
-                    <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200 space-y-3">
-                        <h4 class="font-bold text-slate-900 text-xs flex items-center gap-1.5"><i class="fa-solid fa-box-open text-amber-600"></i> إضافة معدة / جهاز جديد:</h4>
-                        <form id="addDeviceForm" onsubmit="addNewDevice(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-700 block mb-1">رمز الجهاز (router):</label>
-                                <input type="text" id="newDeviceKey" required placeholder="router" class="w-full p-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-700 block mb-1">اسم الجهاز:</label>
-                                <input type="text" id="newDeviceName" required placeholder="راوتر إضافي" class="w-full p-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-700 block mb-1">السعر (د.ع):</label>
-                                <input type="number" id="newDevicePrice" required placeholder="25000" class="w-full p-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900">
-                            </div>
-                            <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-3 px-4 rounded-2xl text-xs transition shadow-md shadow-amber-500/20">
-                                <i class="fa-solid fa-floppy-disk ml-1"></i> حفظ الجهاز
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- جدول الأجهزة -->
-                    <div class="space-y-2">
-                        <h4 class="font-bold text-slate-800 text-xs"><i class="fa-solid fa-boxes-packing text-amber-600 ml-1"></i> قائمة الأجهزة والمعدات (تعديل مباشر أو حذف):</h4>
-                        <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
-                            <table class="w-full text-right border-collapse">
-                                <thead class="bg-slate-50 text-slate-700 text-[11px] font-bold border-b border-slate-200">
-                                    <tr>
-                                        <th class="py-3 px-4">اسم الجهاز</th>
-                                        <th class="py-3 px-4">السعر (د.ع)</th>
-                                        <th class="py-3 px-4 text-left">إجراء الحذف</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="devicesTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
+            <!-- تبويب الإعدادات -->
+            <div id="tab-settings" class="hidden space-y-4 max-w-2xl mx-auto">
+                <div class="glass-card p-6 bg-white space-y-4">
+                    <h3 class="font-black text-slate-900 text-sm">إعدادات أسعار الباقات والأجهزة المعتمدة</h3>
+                    <div id="settingsContainer" class="text-xs text-slate-500">تم تفعيل الأسعار السحابية التلقائية في النظام.</div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- modal تأكيد الحذف النهائي (نافذة منبثقة) -->
-    <div id="deleteConfirmModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-5 shadow-2xl border border-slate-200 text-center">
-            <div class="w-14 h-14 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-200">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+    <!-- Modals -->
+
+    <!-- نافذة تعديل بيانات الأوردر الكاملة -->
+    <div id="editOrderModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-2xs">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h4 class="font-black text-slate-900 text-sm flex items-center gap-2"><i class="fa-solid fa-pen-to-square text-blue-600"></i> تعديل بيانات الأوردر</h4>
+                <button onclick="closeEditOrderModal()" class="text-slate-400 hover:text-rose-500 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
+            <form onsubmit="saveEditedOrder(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editOrderId">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold mb-1">الشركة المزودة:</label>
+                        <select id="editCompany" onchange="handleCompanyChange(this.value, 'editPlanType')" class="w-full ios-input">
+                            <option value="المشروع الوطني">المشروع الوطني</option>
+                            <option value="سوبرسيل">سوبرسيل</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">الباقة السعرية:</label>
+                        <select id="editPlanType" class="w-full ios-input"></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold mb-1">رقم الموبايل:</label>
+                        <input type="tel" id="editPhone" required class="w-full ios-input">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">حالة الدفع:</label>
+                        <select id="editPayment" class="w-full ios-input">
+                            <option value="pending">آجل ⏳</option>
+                            <option value="received">مستلم ✅</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl">
+                    <input type="text" id="editZone" placeholder="الزون" required class="ios-input text-[11px] py-1.5">
+                    <input type="text" id="editStreet" placeholder="الشارع" required class="ios-input text-[11px] py-1.5">
+                    <input type="text" id="editHouse" placeholder="الدار" required class="ios-input text-[11px] py-1.5">
+                    <input type="text" id="editApartment" placeholder="الشقة" class="ios-input text-[11px] py-1.5">
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">راوتر</label>
+                        <select id="editRouter" class="w-full ios-input"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">ONU</label>
+                        <select id="editOnu" class="w-full ios-input"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">UPS</label>
+                        <select id="editUps" class="w-full ios-input"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeEditOrderModal()" class="bg-slate-100 px-4 py-2.5 rounded-xl text-xs font-bold">إلغاء</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md shadow-blue-600/20">حفظ التعديلات 💾</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="detailsModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h4 class="font-black text-sm">تفاصيل الطلب</h4>
+            <div id="ticketDetailsContent"></div>
+            <button onclick="closeTicketDetailsModal()" class="w-full bg-slate-100 py-2.5 rounded-xl font-bold text-xs">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="deleteConfirmModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 text-center">
             <input type="hidden" id="confirmDeleteTargetId">
-
-            <div class="space-y-1.5">
-                <h4 class="font-extrabold text-slate-900 text-sm">تأكيد الحذف النهائي</h4>
-                <p class="text-xs text-slate-500 font-semibold leading-relaxed">هل أنت متأكد تماماً من رغبتك في حذف هذا الأوردر نهائياً من النظام؟ لا يمكن التراجع عن هذه الخطوة.</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="closeDeleteConfirmModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 rounded-2xl text-xs font-bold transition">إلغاء</button>
-                <button onclick="confirmDeleteOrder()" class="bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-2xl text-xs font-bold transition shadow-md shadow-rose-600/20">تأكيد الحذف 🗑️</button>
+            <h4 class="font-black text-sm text-rose-600">تأكيد الحذف النهائي</h4>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="closeDeleteConfirmModal()" class="bg-slate-100 py-2.5 rounded-xl text-xs font-bold">إلغاء</button>
+                <button onclick="confirmDeleteOrder()" class="bg-rose-600 text-white py-2.5 rounded-xl text-xs font-bold">حذف 🗑️</button>
             </div>
         </div>
     </div>
 
-    <!-- modal التفاصيل السجل -->
-    <div id="detailsModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-rectangle-list text-blue-700"></i> تفاصيل السجل والملاحظات
-                </h4>
-                <button onclick="closeTicketDetailsModal()" class="text-slate-400 hover:text-rose-600 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <div id="ticketDetailsContent" class="space-y-4 max-h-[70vh] overflow-y-auto pr-1"></div>
-
-            <div class="flex justify-end pt-2 border-t border-slate-100">
-                <button onclick="closeTicketDetailsModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-5 py-2.5 rounded-2xl text-xs font-bold transition">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- modal الملاحظات والتأجيل -->
-    <div id="actionModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-200">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h4 id="modalTitleHeader" class="font-bold text-slate-900 text-sm">إدراج ملاحظة / سبب التأجيل</h4>
-                <button onclick="closeActionModal()" class="text-slate-400 hover:text-rose-600 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
+    <div id="actionModalContainer" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-3">
             <input type="hidden" id="modalTargetOrderId">
-            <input type="hidden" id="modalAssignedEmp">
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-2">تفاصيل الملاحظة الميدانية أو سبب التأجيل:</label>
-                <textarea id="deferReasonInput" rows="4" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-700 transition" placeholder="اكتب الملاحظات أو التفاصيل هنا..."></textarea>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeActionModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-2xl text-xs font-bold transition">إلغاء</button>
-                <button onclick="saveActionModalData()" class="bg-blue-700 hover:bg-blue-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-blue-700/20">
-                    <i class="fa-solid fa-floppy-disk"></i> حفظ الملاحظة
-                </button>
+            <h4 class="font-black text-xs">إدراج ملاحظة ميدانية جديدة</h4>
+            <textarea id="deferReasonInput" rows="3" class="w-full ios-input text-xs" placeholder="سبب التأجيل أو الملاحظة..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeActionModal()" class="bg-slate-100 px-4 py-2 rounded-xl text-xs font-bold">إلغاء</button>
+                <button onclick="saveActionModalData()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black">حفظ</button>
             </div>
         </div>
     </div>
 
-    <!-- modal معاينة الصورة -->
-    <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+    <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-2xs">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl border border-slate-100">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h4 id="modalTitle" class="font-bold text-slate-900 text-sm">معاينة الصورة المرفقة</h4>
-                <button onclick="closeImageModal()" class="text-slate-400 hover:text-rose-600 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
+                <h4 id="modalTitle" class="font-black text-slate-900 text-sm">معاينة المستمسك</h4>
+                <button onclick="closeImageModal()" class="text-slate-400 hover:text-rose-500 text-lg font-bold"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="flex justify-center bg-slate-50 p-3 rounded-2xl max-h-[70vh] overflow-hidden border border-slate-200">
-                <img id="modalImage" src="" class="max-h-[60vh] object-contain rounded-xl" alt="معاينة الصورة">
+            <div class="flex justify-center bg-slate-50 p-3 rounded-2xl max-h-[65vh] overflow-hidden border border-slate-200">
+                <img id="modalImage" src="" class="max-h-[55vh] object-contain rounded-xl" alt="معاينة البطاقة الوطنية">
             </div>
             <div class="flex justify-end gap-2 pt-2">
-                <a id="downloadImageBtn" href="" download="document_image.png" class="bg-blue-700 hover:bg-blue-800 text-white px-5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-md shadow-blue-700/20">
-                    <i class="fa-solid fa-download"></i> تحميل الصورة
+                <a id="downloadImageBtn" href="" download="National_ID_Card.png" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-blue-600/20">
+                    <i class="fa-solid fa-download"></i> تنزيل الصورة للجوال 📥
                 </a>
-                <button onclick="closeImageModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-2xl text-xs font-bold transition">إغلاق</button>
+                <button onclick="closeImageModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl text-xs font-bold transition">إغلاق</button>
             </div>
         </div>
     </div>
-
 </body>
 </html>
