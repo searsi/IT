@@ -292,7 +292,6 @@
             } catch(e) {}
         };
 
-        // تهريب النصوص لمنع XSS
         window.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         window.telLink = p => 'tel:' + String(p || '').replace(/[^\d+]/g, '');
         window.waLink = p => {
@@ -332,7 +331,6 @@
             }, 3000);
         };
 
-        // ضغط الصورة قبل التخزين لضمان عدم تجاوز حد 1MB في Firestore
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 if (!file) return resolve(null);
@@ -342,7 +340,7 @@
                     const img = new Image();
                     img.onerror = () => reject(new Error('bad image'));
                     img.onload = () => {
-                        const MAX = 800; // تقليل الأبعاد لضمان نجاح الحفظ
+                        const MAX = 800;
                         const scale = Math.min(1, MAX / Math.max(img.width, img.height));
                         const w = Math.round(img.width * scale);
                         const h = Math.round(img.height * scale);
@@ -622,6 +620,7 @@
 
             try {
                 const company = document.querySelector('input[name="installCompany"]:checked').value;
+                const customerName = document.getElementById('installCustomerName').value.trim(); // اسم الزبون الاختياري
                 const planKey = document.getElementById('planType').value;
                 const phone = document.getElementById('installPhone').value;
                 const paymentStatus = document.getElementById('installPayment').value;
@@ -658,7 +657,7 @@
 
                 await addDoc(collection(db, "orders"), {
                     orderCategory: "installation",
-                    company, plan: planKey, totalPrice, paymentStatus, phone,
+                    company, customerName: customerName || null, plan: planKey, totalPrice, paymentStatus, phone,
                     address: { zone, street, house, apartment },
                     hardware: { router: routerQty, onu: onuQty, ups: upsQty },
                     notesList: notesArray, frontImg: frontUrl || null, backImg: backUrl || null,
@@ -684,6 +683,7 @@
 
             try {
                 const company = document.querySelector('input[name="maintCompany"]:checked').value;
+                const customerName = document.getElementById('maintCustomerName').value.trim(); // اسم الزبون الاختياري للصيانة
                 const issueDescription = document.getElementById('maintIssue').value.trim();
                 const zone = document.getElementById('maintZone').value;
                 const street = document.getElementById('maintStreet').value;
@@ -694,7 +694,7 @@
 
                 await addDoc(collection(db, "orders"), {
                     orderCategory: "maintenance",
-                    company, plan: "أوردر صيانة وإنقطاع", totalPrice: 0, paymentStatus: "pending", phone: "غير مطلوب",
+                    company, customerName: customerName || null, plan: "أوردر صيانة وإنقطاع", totalPrice: 0, paymentStatus: "pending", phone: "غير مطلوب",
                     address: { zone, street, house, apartment },
                     hardware: { router: 0, onu: 0, ups: 0 },
                     notesList: notesArray, frontImg: null, backImg: null,
@@ -789,7 +789,7 @@
 
                 const matchZone = zoneFilter === 'ALL' || (o.address?.zone || '') === zoneFilter;
                 const matchCompany = companyFilter === 'ALL' || o.company === companyFilter;
-                const matchSearch = !searchInput || (o.phone || '').includes(searchInput) || (o.address?.zone || '').toLowerCase().includes(searchInput) || (o.address?.street || '').toLowerCase().includes(searchInput);
+                const matchSearch = !searchInput || (o.phone || '').includes(searchInput) || (o.customerName || '').toLowerCase().includes(searchInput) || (o.address?.zone || '').toLowerCase().includes(searchInput) || (o.address?.street || '').toLowerCase().includes(searchInput);
 
                 return matchZone && matchCompany && matchSearch;
             });
@@ -959,6 +959,7 @@
             const lastNote = deferred && o.notesList && o.notesList[0] ? o.notesList[0].text : '';
             const sub = `دار ${esc(o.address?.house)}`;
             const since = o.status === 'in_progress' && o.assignedEmp === me && o.receivedAt ? `<span class="text-[13px] text-slate-500">استلمته ${agoLabel(o.receivedAt)}</span>` : '';
+            const customerBadge = o.customerName ? `<span class="text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md inline-block mb-1"><i class="fa-solid fa-user ml-1"></i> ${esc(o.customerName)}</span>` : '';
 
             const actions = takenByOther
                 ? `<div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold p-3 rounded-xl text-center"><i class="fa-solid fa-lock ml-1"></i> الطلب مستلم من ${esc(o.assignedEmp)}</div>
@@ -983,6 +984,7 @@
                             ${statusPillHTML(o)}
                         </div>
                         <div class="flex flex-col gap-0.5">
+                            ${customerBadge}
                             <span class="font-brand font-extrabold text-[21px] leading-snug text-slate-900">زون ${esc(o.address?.zone)} · شارع ${esc(o.address?.street)}</span>
                             <span class="text-sm text-slate-600">${sub}</span>
                         </div>
@@ -1076,6 +1078,7 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3">
                         <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isMaint ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-700'}"><i class="fa-solid ${isMaint ? 'fa-screwdriver-wrench' : 'fa-wifi'} text-lg"></i></div>
                         <div class="flex flex-col gap-0.5 min-w-0">
+                            ${o.customerName ? `<span class="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg inline-block w-fit mb-1"><i class="fa-solid fa-user ml-1"></i> ${esc(o.customerName)}</span>` : ''}
                             <span class="font-brand font-extrabold text-[22px] leading-snug">زون ${esc(o.address?.zone)} · شارع ${esc(o.address?.street)}</span>
                             <span class="text-sm text-slate-600">دار ${esc(o.address?.house)} · شقة: ${esc(o.address?.apartment || 'لا يوجد')}</span>
                         </div>
@@ -1083,6 +1086,7 @@
 
                     <div class="bg-white border border-slate-200 rounded-2xl px-4">
                         ${row('النوع', isMaint ? 'صيانة' : 'نصب جديد')}
+                        ${o.customerName ? row('اسم الزبون', esc(o.customerName)) : ''}
                         ${row('الشركة', esc(o.company))}
                         ${!isMaint ? row('الباقة', esc(o.plan)) : ''}
                         ${!isMaint ? row('المبلغ المطلوب', `<span class="font-brand font-extrabold text-lg text-emerald-700" style="font-variant-numeric: tabular-nums;">${(o.totalPrice || 0).toLocaleString()} د.ع</span> <span class="${o.paymentStatus === 'received' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} rounded-lg px-2 py-0.5 text-xs font-bold mr-1">${payLabel(o)}</span>`) : ''}
@@ -1219,6 +1223,7 @@
                     </div>
 
                     <div class="space-y-1.5 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-semibold">
+                        ${o.customerName ? `<div class="flex justify-between items-center bg-sky-50 px-2 py-1 rounded-lg text-sky-800 font-bold"><span class="text-sky-600">اسم الزبون:</span><span>${esc(o.customerName)}</span></div>` : ''}
                         ${!isMaint ? `<div class="flex justify-between items-center"><span class="text-slate-400">الهاتف:</span>
                             ${isManager ? `<span class="flex items-center gap-2">
                                 <a href="${telLink(o.phone)}" dir="ltr" class="font-mono text-slate-900 hover:text-sky-600">${esc(o.phone)}</a>
@@ -1279,7 +1284,7 @@
             const completed = (window.allOrders || []).filter(o => {
                 if (o.status !== 'completed') return false;
                 if(!searchInput) return true;
-                return (o.phone || '').includes(searchInput) || (o.address?.zone || '').toLowerCase().includes(searchInput);
+                return (o.phone || '').includes(searchInput) || (o.customerName || '').toLowerCase().includes(searchInput) || (o.address?.zone || '').toLowerCase().includes(searchInput);
             });
 
             if(completed.length === 0) {
@@ -1295,6 +1300,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-black text-[10px]">مكتمل ✅</span>
                                 <span class="font-black text-slate-900">${esc(o.company)} - ${esc(o.plan || 'صيانة')}</span>
+                                ${o.customerName ? `<span class="text-sky-700 font-bold">(${esc(o.customerName)})</span>` : ''}
                             </div>
                             <p class="text-[11px] text-slate-500 font-semibold">العنوان: زون ${esc(o.address?.zone)} - ش ${esc(o.address?.street)} | الموظف المنجز: <span class="text-sky-600 font-bold">${esc(o.assignedEmp || 'غير مسجل')}</span></p>
                             ${!isMaint && o.hardware ? `<p class="text-[10px] text-slate-400">الأجهزة: راوتر (${Number(o.hardware.router) || 0}) | ONU (${Number(o.hardware.onu) || 0}) | UPS (${Number(o.hardware.ups) || 0})</p>` : ''}
@@ -1311,6 +1317,7 @@
 
             document.getElementById('editOrderId').value = order.id;
             document.getElementById('editCompany').value = order.company;
+            document.getElementById('editCustomerName').value = order.customerName || '';
             handleCompanyChange(order.company, 'editPlanType');
             document.getElementById('editPlanType').value = order.plan;
             document.getElementById('editPhone').value = order.phone || '';
@@ -1340,6 +1347,7 @@
             try {
                 const order = (window.allOrders || []).find(o => o.id === orderId);
                 const company = document.getElementById('editCompany').value;
+                const customerName = document.getElementById('editCustomerName').value.trim();
                 const zone = document.getElementById('editZone').value;
                 const street = document.getElementById('editStreet').value;
                 const house = document.getElementById('editHouse').value;
@@ -1347,7 +1355,7 @@
                 const orderRef = doc(db, "orders", orderId);
 
                 if (order && order.orderCategory === 'maintenance') {
-                    await updateDoc(orderRef, { company, address: { zone, street, house, apartment } });
+                    await updateDoc(orderRef, { company, customerName: customerName || null, address: { zone, street, house, apartment } });
                 } else {
                     const planKey = document.getElementById('editPlanType').value;
                     const phone = document.getElementById('editPhone').value;
@@ -1364,7 +1372,7 @@
                     const totalPrice = planObj.price + (routerQty * devRouter) + (onuQty * devOnu) + (upsQty * devUps);
 
                     await updateDoc(orderRef, {
-                        company, plan: planKey, phone, paymentStatus, totalPrice,
+                        company, customerName: customerName || null, plan: planKey, phone, paymentStatus, totalPrice,
                         address: { zone, street, house, apartment },
                         hardware: { router: routerQty, onu: onuQty, ups: upsQty }
                     });
@@ -1381,13 +1389,13 @@
         window.exportOrdersToExcel = function() {
             const orders = window.allOrders || [];
             const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-            let csvContent = "\uFEFFالتاريخ,النوع,الشركة,الباقة,الهاتف,العنوان,المبلغ,التسديد,الموظف المسؤول,الحالة\n";
+            let csvContent = "\uFEFFالتاريخ,النوع,اسم الزبون,الشركة,الباقة,الهاتف,العنوان,المبلغ,التسديد,الموظف المسؤول,الحالة\n";
             orders.forEach(o => {
                 const date = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('en-GB') : '';
                 const addressStr = `زون ${o.address?.zone || ''} ش ${o.address?.street || ''} دار ${o.address?.house || ''}`;
                 const type = o.orderCategory === 'maintenance' ? 'صيانة' : 'نصب';
                 const pay = o.orderCategory === 'maintenance' ? '' : (o.paymentStatus === 'received' ? 'مستلم' : 'آجل');
-                csvContent += [date, type, o.company, o.plan || 'صيانة', o.phone || '', addressStr, o.totalPrice || 0, pay, o.assignedEmp || 'غير محدد', STATUS_AR[o.status] || o.status].map(q).join(',') + "\n";
+                csvContent += [date, type, o.customerName || '', o.company, o.plan || 'صيانة', o.phone || '', addressStr, o.totalPrice || 0, pay, o.assignedEmp || 'غير محدد', STATUS_AR[o.status] || o.status].map(q).join(',') + "\n";
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1409,6 +1417,7 @@
             (window.allOrders || []).forEach(o => {
                 container.innerHTML += `
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="py-2.5 px-3 font-bold text-slate-800">${esc(o.customerName || 'غير مسجل')}</td>
                         <td class="py-2.5 px-3 font-bold text-slate-800">${esc(o.company)}</td>
                         <td class="py-2.5 px-3 text-slate-600">${esc(o.plan || 'صيانة')}</td>
                         <td class="py-2.5 px-3 font-mono">${esc(o.phone || '---')}</td>
@@ -1477,6 +1486,7 @@
                         <span class="font-black text-sky-700">${esc(order.company)}</span>
                         <span class="bg-slate-200 px-2 py-0.5 rounded font-bold">${esc(STATUS_AR[order.status] || order.status)}</span>
                     </div>
+                    ${order.customerName ? `<p><strong>اسم الزبون:</strong> <span class="text-sky-700 font-bold">${esc(order.customerName)}</span></p>` : ''}
                     <p><strong>الباقة:</strong> ${esc(order.plan)}</p>
                     <p><strong>الموظف المسؤول:</strong> <span class="text-sky-600 font-bold">${esc(order.assignedEmp || 'غير مستلم بعد')}</span></p>
                     ${prevEmps.length ? `<p><strong>موظفون سابقون:</strong> ${prevEmps.map(esc).join('، ')}</p>` : ''}
@@ -1572,7 +1582,6 @@
             return `هوية_${o.phone || o.id}_${side === 'front' ? 'امامي' : 'خلفي'}.${ext}`;
         };
 
-        // دالة تنزيل الصور المحدثة لتتوافق تماماً مع الهواتف والحواسب
         window.downloadOrderImage = function(orderId, side) {
             const o = (window.allOrders || []).find(x => x.id === orderId);
             if (!o) return;
@@ -1915,7 +1924,7 @@
                             </select>
                         </div>
                         <div>
-                            <input type="text" id="filterSearchInput" oninput="renderKanbanBoard()" placeholder="بحث سريع برقم الهاتف أو الزون..." class="ios-input py-2 text-xs w-full">
+                            <input type="text" id="filterSearchInput" oninput="renderKanbanBoard()" placeholder="بحث سريع برقم الهاتف أو الزون أو الاسم..." class="ios-input py-2 text-xs w-full">
                         </div>
                     </div>
                 </div>
@@ -1951,7 +1960,7 @@
             <div id="tab-completed-orders" class="hidden space-y-4">
                 <div class="glass-card p-4 flex flex-col sm:flex-row justify-between items-center gap-3 bg-white">
                     <h3 class="font-black text-slate-900 text-xs">أرشيف الطلبات المكتملة (انقر على الأوردر لعرض التعليقات والتفاصيل)</h3>
-                    <input type="text" id="searchCompletedInput" oninput="renderCompletedOrders()" placeholder="بحث برقم الهاتف أو الزون..." class="ios-input text-xs w-full sm:w-64">
+                    <input type="text" id="searchCompletedInput" oninput="renderCompletedOrders()" placeholder="بحث برقم الهاتف أو الزون أو الاسم..." class="ios-input text-xs w-full sm:w-64">
                 </div>
                 <div id="manager-completed-orders-list" class="space-y-3"></div>
             </div>
@@ -1970,6 +1979,7 @@
                         <table class="w-full min-w-[620px] text-right text-xs">
                             <thead class="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
                                 <tr>
+                                    <th class="py-3 px-3">اسم الزبون</th>
                                     <th class="py-3 px-3">الشركة</th>
                                     <th class="py-3 px-3">الباقة</th>
                                     <th class="py-3 px-3">الهاتف</th>
@@ -2005,9 +2015,16 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
+                                <label class="block font-bold mb-1">اسم الزبون <span class="text-slate-400 font-normal">(اختياري)</span>:</label>
+                                <input type="text" id="installCustomerName" placeholder="مثال: أحمد محمد" class="w-full ios-input">
+                            </div>
+                            <div>
                                 <label class="block font-bold mb-1">رقم الموبايل:</label>
                                 <input type="tel" id="installPhone" required placeholder="07700000000" class="w-full ios-input">
                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-bold mb-1">التسديد:</label>
                                 <select id="installPayment" class="w-full ios-input">
@@ -2071,6 +2088,10 @@
                                 <label class="radio-pill"><input type="radio" name="maintCompany" value="المشروع الوطني" checked> الوطني</label>
                                 <label class="radio-pill"><input type="radio" name="maintCompany" value="سوبرسيل"> سوبرسيل</label>
                             </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">اسم الزبون <span class="text-slate-400 font-normal">(اختياري)</span>:</label>
+                            <input type="text" id="maintCustomerName" placeholder="مثال: أحمد محمد" class="w-full ios-input">
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl">
                             <input type="text" id="maintZone" required placeholder="زون" class="ios-input text-[11px] py-1.5">
@@ -2166,16 +2187,23 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block font-bold mb-1">الباقة السعرية:</label>
-                        <select id="editPlanType" class="w-full ios-input"></select>
+                        <label class="block font-bold mb-1">اسم الزبون (اختياري):</label>
+                        <input type="text" id="editCustomerName" placeholder="مثال: أحمد محمد" class="w-full ios-input">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                        <label class="block font-bold mb-1">الباقة السعرية:</label>
+                        <select id="editPlanType" class="w-full ios-input"></select>
+                    </div>
+                    <div>
                         <label class="block font-bold mb-1">رقم الموبايل:</label>
                         <input type="tel" id="editPhone" required class="w-full ios-input">
                     </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold mb-1">حالة الدفع:</label>
                         <select id="editPayment" class="w-full ios-input">
