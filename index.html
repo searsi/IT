@@ -332,7 +332,7 @@
             }, 3000);
         };
 
-        // ضغط الصورة قبل التخزين: صور الجوال تكون عدة ميغابايت وحد مستند Firestore هو 1MB
+        // ضغط الصورة قبل التخزين لضمان عدم تجاوز حد 1MB في Firestore
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 if (!file) return resolve(null);
@@ -342,16 +342,16 @@
                     const img = new Image();
                     img.onerror = () => reject(new Error('bad image'));
                     img.onload = () => {
-                        const MAX = 1100;
+                        const MAX = 800; // تقليل الأبعاد لضمان نجاح الحفظ
                         const scale = Math.min(1, MAX / Math.max(img.width, img.height));
                         const w = Math.round(img.width * scale);
                         const h = Math.round(img.height * scale);
                         const canvas = document.createElement('canvas');
                         canvas.width = w; canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        let q = 0.72;
+                        let q = 0.70;
                         let out = canvas.toDataURL('image/jpeg', q);
-                        while (out.length > 380000 && q > 0.35) { q -= 0.1; out = canvas.toDataURL('image/jpeg', q); }
+                        while (out.length > 300000 && q > 0.3) { q -= 0.1; out = canvas.toDataURL('image/jpeg', q); }
                         resolve(out);
                     };
                     img.src = reader.result;
@@ -428,22 +428,13 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // الدور يُقرأ من السيرفر (users/{uid}) وليس من اختيار المستخدم
                 let savedRole = 'employee';
                 try {
                     const roleSnap = await getDoc(doc(db, "users", user.uid));
-                    if (!roleSnap.exists()) {
-                        console.warn('لا يوجد مستند بالمعرّف:', user.uid);
-                        setTimeout(() => showToast('لا يوجد مستند role لهذا الحساب. UID: ' + user.uid, 'error'), 600);
-                    } else if (String(roleSnap.data().role || '').trim().toLowerCase() === 'manager') {
+                    if (roleSnap.exists() && String(roleSnap.data().role || '').trim().toLowerCase() === 'manager') {
                         savedRole = 'manager';
-                    } else {
-                        setTimeout(() => showToast('قيمة role غير صحيحة: ' + JSON.stringify(roleSnap.data().role), 'error'), 600);
                     }
-                } catch (err) {
-                    console.error(err);
-                    setTimeout(() => showToast('تعذر قراءة الدور: ' + (err.code || err.message), 'error'), 600);
-                }
+                } catch (err) {}
                 localStorage.setItem('userRole', savedRole);
                 localStorage.setItem('userEmail', user.email);
                 routeUser(savedRole, user.email);
@@ -454,7 +445,6 @@
             }
         });
 
-        // التحكم بفتح وإغلاق السلايد بار الجانبي (للمنجر)
         window.toggleManagerSidebar = function(open) {
             const drawer = document.getElementById('managerSidebarDrawer');
             const backdrop = document.getElementById('managerSidebarBackdrop');
@@ -467,7 +457,6 @@
             }
         };
 
-        // التحكم بفتح وإغلاق السلايد بار الجانبي (للموظف)
         window.toggleStaffSidebar = function(open) {
             const drawer = document.getElementById('staffSidebarDrawer');
             const backdrop = document.getElementById('staffSidebarBackdrop');
@@ -618,7 +607,6 @@
                 await setDoc(docRef, window.currentPrices);
                 showToast(successMessage, 'success');
                 renderSettingsUI();
-                // نحافظ على الشركة المختارة حالياً في استمارة النصب
                 const selectedCompany = document.querySelector('input[name="installCompany"]:checked')?.value || 'المشروع الوطني';
                 handleCompanyChange(selectedCompany, 'planType');
             } catch(e) {
@@ -743,7 +731,7 @@
                 } else {
                     renderStaffViews();
                 }
-            } catch (error) { console.error(error); showToast('تعذر تحميل الطلبات', 'error'); }
+            } catch (error) { showToast('تعذر تحميل الطلبات', 'error'); }
         };
 
         function populateZoneFilterOptions() {
@@ -823,7 +811,6 @@
             setCnt('cntDefer', counts.not_found);
         };
 
-        // تبديل العمود المعروض على الجوال (على الشاشات الكبيرة تظهر الأعمدة الثلاثة)
         window.setKanbanCol = function(name) {
             ['new', 'progress', 'defer'].forEach(n => {
                 document.getElementById('kcol-' + n)?.classList.toggle('col-hidden-mobile', n !== name);
@@ -831,7 +818,6 @@
             });
         };
 
-        // ================= واجهة الموظف الميداني =================
         const OVERDUE_HOURS = 6;
         const tsToDate = t => t?.toDate ? t.toDate() : (t?.seconds ? new Date(t.seconds * 1000) : null);
         const fmtTime = t => { const d = tsToDate(t); return d ? d.toLocaleTimeString('ar-IQ', { hour: 'numeric', minute: '2-digit' }) : '-'; };
@@ -843,7 +829,6 @@
             const h = Math.floor(m / 60);
             return h < 24 ? `منذ ${h} ساعة` : `منذ ${Math.floor(h / 24)} يوم`;
         };
-        // طلب جديد لم يُستلم منذ أكثر من OVERDUE_HOURS ساعات
         const overdueHours = o => {
             if (o.status !== 'new') return 0;
             const d = tsToDate(o.createdAt); if (!d) return 0;
@@ -901,7 +886,6 @@
             const active = orders.filter(o => o.status === 'new' || o.status === 'in_progress');
             const deferred = orders.filter(o => o.status === 'not_found');
 
-            // أزرار الزونات
             const zoneCount = {};
             active.forEach(o => { const z = o.address?.zone; if (z) zoneCount[z] = (zoneCount[z] || 0) + 1; });
             window._staffZones = Object.keys(zoneCount).sort((a, b) => String(a).localeCompare(String(b), 'ar', { numeric: true }));
@@ -914,7 +898,6 @@
                     : '';
             }
 
-            // المتأخر أولاً، ثم طلباتي قيد التنفيذ، ثم الجديد
             const rank = o => overdueHours(o) ? 0 : (o.status === 'in_progress' && o.assignedEmp === me) ? 1 : o.status === 'new' ? 2 : 3;
             const shown = active
                 .filter(o => window.staffZone === 'ALL' || (o.address?.zone || '') === window.staffZone)
@@ -944,7 +927,6 @@
             setText('bnStaffDefer', deferred.length);
             updateStaffHeader();
 
-            // تحديث شاشة التفاصيل إذا كانت مفتوحة
             if (window._staffDetailId && !document.getElementById('staffDetailView').classList.contains('hidden')) renderStaffDetail(window._staffDetailId);
         };
 
@@ -975,9 +957,7 @@
             const deferred = o.status === 'not_found';
             const hw = !isMaint ? hardwareText(o) : '';
             const lastNote = deferred && o.notesList && o.notesList[0] ? o.notesList[0].text : '';
-            const sub = isMaint
-                ? `دار ${esc(o.address?.house)}`
-                : `دار ${esc(o.address?.house)}`;
+            const sub = `دار ${esc(o.address?.house)}`;
             const since = o.status === 'in_progress' && o.assignedEmp === me && o.receivedAt ? `<span class="text-[13px] text-slate-500">استلمته ${agoLabel(o.receivedAt)}</span>` : '';
 
             const actions = takenByOther
@@ -1019,7 +999,6 @@
                 </div>`;
         }
 
-        // ---------- بطاقة الهوية (مشتركة بين المنجر والموظف) ----------
         window.idCardSectionHTML = function(order) {
             if (order.orderCategory === 'maintenance') return '';
             const sideBox = (side, label, src) => {
@@ -1047,7 +1026,6 @@
                 </div>`;
         };
 
-        // ---------- شاشة تفاصيل الطلب للموظف ----------
         window.openStaffDetail = function(id) {
             window._staffDetailId = id;
             renderStaffDetail(id);
@@ -1149,7 +1127,6 @@
             view.scrollTop = prevScroll;
         }
 
-        // ---------- شاشة تم الإكمال ----------
         window.showStaffDone = function(o) {
             const { done, remaining, total } = staffProgress();
             document.getElementById('staffDoneInner').innerHTML = `
@@ -1276,7 +1253,6 @@
             `;
         }
 
-        // المنجر: إلغاء استلام موظف وإرجاع الطلب (ويُسجَّل الموظف في previousEmployees)
         window.releaseOrder = async function(id) {
             const o = (window.allOrders || []).find(x => x.id === id);
             if (!o || !o.assignedEmp) return;
@@ -1371,7 +1347,6 @@
                 const orderRef = doc(db, "orders", orderId);
 
                 if (order && order.orderCategory === 'maintenance') {
-                    // أوامر الصيانة: لا باقة ولا أجهزة ولا سعر، نعدّل الشركة والعنوان فقط
                     await updateDoc(orderRef, { company, address: { zone, street, house, apartment } });
                 } else {
                     const planKey = document.getElementById('editPlanType').value;
@@ -1450,7 +1425,6 @@
                 const ref = doc(db, "orders", orderId);
                 const empName = currentEmpName();
 
-                // قراءة حديثة من السيرفر لمنع الاستلام المزدوج
                 const snap = await getDoc(ref);
                 if (!snap.exists()) return showToast("الطلب غير موجود", "error");
                 const current = snap.data();
@@ -1483,7 +1457,6 @@
         window.openTicketDetailsModal = function(id) {
             const order = (window.allOrders || []).find(o => o.id === id);
             if(!order) return;
-            // الموظف يشوف شاشة كاملة، والمنجر يبقى بالنافذة
             if ((localStorage.getItem('userRole') || 'employee') !== 'manager') return openStaffDetail(id);
             const isMaint = order.orderCategory === 'maintenance';
 
@@ -1495,7 +1468,6 @@
             }
 
             const prevEmps = (order.previousEmployees || []);
-
             const idSection = idCardSectionHTML(order);
 
             document.getElementById('detailsModalContainer').classList.remove('hidden');
@@ -1593,7 +1565,6 @@
             }
         };
 
-        // لا نقبل إلا صور data:image بصيغة base64
         window.safeImg = src => (typeof src === 'string' && /^data:image\/[a-z+.-]+;base64,[A-Za-z0-9+\/=]+$/i.test(src)) ? src : '';
 
         window.imageFileName = function(o, side, src) {
@@ -1601,18 +1572,42 @@
             return `هوية_${o.phone || o.id}_${side === 'front' ? 'امامي' : 'خلفي'}.${ext}`;
         };
 
+        // دالة تنزيل الصور المحدثة لتتوافق تماماً مع الهواتف والحواسب
         window.downloadOrderImage = function(orderId, side) {
             const o = (window.allOrders || []).find(x => x.id === orderId);
             if (!o) return;
             const src = safeImg(side === 'front' ? o.frontImg : o.backImg);
-            if (!src) return showToast('لا توجد صورة مرفقة', 'error');
-            const a = document.createElement('a');
-            a.href = src;
-            a.download = imageFileName(o, side, src);
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            showToast('تم تحميل صورة البطاقة 📥', 'success');
+            if (!src) return showToast('لا توجد صورة مرفقة أو الصورة تالفة', 'error');
+
+            try {
+                const arr = src.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                const blob = new Blob([u8arr], { type: mime });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = imageFileName(o, side, src);
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(blobUrl);
+                showToast('تم البدء بتنزيل صورة البطاقة 📥', 'success');
+            } catch (e) {
+                const a = document.createElement('a');
+                a.href = src;
+                a.download = imageFileName(o, side, src);
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
         };
 
         window.addInlineNote = async function(orderId) {
@@ -1662,7 +1657,6 @@
 </head>
 <body class="bg-slate-100 antialiased min-h-screen">
 
-    <!-- Toast Notification -->
     <div id="customToast" class="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl font-bold text-xs transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
         <span id="toastMessage">تمت العملية بنجاح!</span>
@@ -1704,7 +1698,7 @@
         </div>
     </div>
 
-    <!-- 2. واجهة الموظفين / الميدان (مع سلايد بار واحصائيات شخصية) -->
+    <!-- 2. واجهة الموظفين / الميدان -->
     <div id="view-staff" class="hidden min-h-screen flex flex-col">
         <header class="staff-hero space-y-4">
             <div class="flex items-center justify-between gap-3">
@@ -1735,7 +1729,6 @@
             </div>
         </header>
 
-        <!-- سلايد بار الموظف الميداني -->
         <div id="staffSidebarBackdrop" onclick="toggleStaffSidebar(false)" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs transition-opacity"></div>
         <div id="staffSidebarDrawer" class="fixed inset-y-0 right-0 z-50 w-72 bg-white shadow-2xl border-l border-slate-200 transform translate-x-full flex flex-col justify-between p-6 sidebar-drawer">
             <div class="space-y-6">
@@ -1775,7 +1768,6 @@
         </div>
 
         <main class="app-container mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1 w-full space-y-5 sm:space-y-6">
-            <!-- قوائم الموظف -->
             <div id="tab-staff-active-orders" class="space-y-3">
                 <div id="staffZoneChips" class="flex gap-2 overflow-x-auto pb-1"></div>
                 <div id="staff-active-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
@@ -1799,7 +1791,6 @@
     <div id="view-manager" class="hidden min-h-screen flex flex-col">
         <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-3 flex justify-between items-center shadow-2xs">
             <div class="flex items-center gap-3">
-                <!-- زر فتح السلايد بار الجانبي (للمنجر) -->
                 <button onclick="toggleManagerSidebar(true)" class="md:hidden bg-slate-100 hover:bg-slate-200 text-slate-800 p-2.5 rounded-xl text-sm transition">
                     <i class="fa-solid fa-bars-staggered"></i>
                 </button>
@@ -1820,7 +1811,6 @@
                 </div>
             </div>
             
-            <!-- القوائم للأجهزة المكتبية (Desktop Navbar) -->
             <nav class="hidden md:flex items-center gap-1.5">
                 <button onclick="switchManagerTab('kanban-orders')" id="nav-kanban-orders" class="px-4 py-2 rounded-xl text-xs font-black bg-sky-500 text-white shadow-md shadow-sky-500/20">لوحة الكانبان</button>
                 <button onclick="switchManagerTab('completed-orders')" id="nav-completed-orders" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">الأرشيف</button>
@@ -1833,7 +1823,6 @@
             <button onclick="handleLogout()" class="bg-rose-50 text-rose-600 p-2.5 rounded-xl text-xs font-bold border border-rose-100" title="تسجيل الخروج"><i class="fa-solid fa-right-from-bracket"></i></button>
         </header>
 
-        <!-- سلايد بار جانبى احترافي لإدارة المنجر -->
         <div id="managerSidebarBackdrop" onclick="toggleManagerSidebar(false)" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs transition-opacity"></div>
         <div id="managerSidebarDrawer" class="fixed inset-y-0 right-0 z-50 w-72 bg-white shadow-2xl border-l border-slate-200 transform translate-x-full flex flex-col justify-between p-6 sidebar-drawer">
             <div class="space-y-6">
@@ -2098,7 +2087,7 @@
                 </div>
             </div>
 
-            <!-- تبويب الإعدادات المحدث والكامل -->
+            <!-- تبويب الإعدادات -->
             <div id="tab-settings" class="hidden space-y-6 max-w-3xl mx-auto">
                 <div class="glass-card p-6 bg-white space-y-4">
                     <h3 class="font-black text-slate-900 text-sm border-b border-slate-100 pb-3">تعديل أسعار الباقات الحالية</h3>
@@ -2285,12 +2274,10 @@
         </div>
     </div>
 
-    <!-- شاشة تفاصيل الطلب للموظف (ملء الشاشة) -->
     <div id="staffDetailView" class="hidden fixed inset-0 z-[55] bg-slate-100 overflow-y-auto">
         <div id="staffDetailInner" class="max-w-xl mx-auto min-h-full"></div>
     </div>
 
-    <!-- شاشة تأكيد إكمال الطلب -->
     <div id="staffDoneScreen" class="hidden fixed inset-0 z-[65] bg-slate-100 overflow-y-auto">
         <div id="staffDoneInner" class="max-w-md mx-auto min-h-full flex flex-col items-center justify-center gap-7 p-6 text-center"></div>
     </div>
